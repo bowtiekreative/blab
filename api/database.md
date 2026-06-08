@@ -94,7 +94,9 @@ CREATE TABLE rooms (
   -- State
   is_live         BOOLEAN DEFAULT false,
   is_private      BOOLEAN DEFAULT false,
-  password_hash   VARCHAR(255),  -- null if public
+  password_hash   VARCHAR(255),
+  private_room_expires_at TIMESTAMPTZ,  -- null if public
+  private_room_paid BOOLEAN DEFAULT false,  -- was payment collected?
   is_recorded     BOOLEAN DEFAULT false,
   is_scheduled    BOOLEAN DEFAULT false,
   scheduled_start_at TIMESTAMPTZ,

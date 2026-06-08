@@ -28,6 +28,8 @@ User deposits $ → Wallet balance (in cents)
 | Diamond | 💎 | $25.00 | Full screen diamond burst |
 | Hustle Zone | 🏆 | $50.00 | Custom trophy animation + sound |
 | Spotlight | ⭐ | $100.00 | Pin their slot fullscreen for 5s |
+| Private Room (5min) | 🔒 | $0.99 | Password-protected room for 5 min |
+| Private Room Extend | 🔄 | $0.50 | Extend private room 5 more min |
 
 ## Subscription Tiers
 

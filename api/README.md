@@ -57,6 +57,7 @@ GET    /v1/auth/me                      # Current user profile
   "isLive": "boolean",
   "isPrivate": "boolean",
   "passwordHash": "string (null if public)",
+  "privateRoomExpiresAt": "ISO8601 (null if public)",
   "isRecorded": "boolean",
   "isBanned": "boolean",
   "isScheduled": "boolean",
@@ -136,12 +137,23 @@ GET    /v1/rooms/by-tag/:hashtag    # Rooms by hashtag
 GET    /v1/rooms/categories         # List categories with icons
 ```
 
-### Private / Password Rooms
+### Private / Password Rooms (Paid — 5 Min Limit)
+
+Private rooms are a **paid feature** to prevent them from dominating the platform. They're meant for quick private chats, not as a replacement for public community rooms.
+
+| Rule | Detail |
+|------|--------|
+| **Cost** | $0.99 per private room session |
+| **Duration** | **5 minutes maximum** — auto-expires |
+| **Password** | Required — share with invited guests |
+| **Expiry** | Room converts to public OR ends when timer runs out |
+| **Slots** | Still limited to 4 (same carousel) |
+| **Purpose** | Quick sidebar convos, not permanent spaces |
 
 ```
 POST   /v1/rooms/:id/verify-password  # Join private room
-PATCH  /v1/rooms/:id/set-password     # Set/change room password
-PATCH  /v1/rooms/:id/remove-password  # Make room public again
+POST   /v1/private-rooms              # Create paid private room (+$0.99)
+PATCH  /v1/rooms/:id/extend-private   # Extend 5 more min (additional charge)
 ```
 
 ### Scheduled Rooms
