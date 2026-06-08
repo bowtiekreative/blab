@@ -10,17 +10,21 @@
 users ──1:N── rooms (as host)
 users ──N:N── rooms (as participant via room_participants)
 users ──N:N── rooms (as viewer via room_viewers)
-users ──1:N── rooms (as moderator via room_moderators)
-users ──1:N── rooms (as co-host via room_co_hosts)
+users ──N:N── rooms (as moderator via room_moderators)
+users ──N:N── rooms (as co-host via room_co_hosts)
 users ──N:N── users (follows)
 users ──N:N── users (blocks)
 rooms ──1:N── messages
 rooms ──1:N── recordings
 rooms ──1:N── clips
 rooms ──1:N── gifs
+rooms ──1:N── teasers
 rooms ──1:N── gifts
 rooms ──1:N── polls
 rooms ──1:N── slot_queue
+rooms ──1:N── voice_notes
+rooms ──1:N── qa_questions
+rooms ──N:N── users (recording_consent via recording_consents)
 users ──1:N── messages
 users ──1:N── notifications
 users ──1:N── wallets
@@ -28,6 +32,12 @@ users ──1:N── subscriptions
 users ──1:N── badges
 users ──1:N── strikes
 users ──1:N── muted_words
+users ──N:N── squads (via squad_members)
+users ──1:N── identity_verifications
+users ──1:N── token_transactions
+squads ──1:N── squad_members
+squads ──1:N── squad_muted_words
+jail ──N:1── users
 ```
 
 ## Tables
@@ -50,6 +60,19 @@ CREATE TABLE users (
   facebook_id     VARCHAR(255) UNIQUE,
   x_id            VARCHAR(255) UNIQUE,
 
+  -- Identity & Verification
+  verification_level VARCHAR(20) DEFAULT 'basic',
+    -- levels: basic, verified, id_verified
+  verification_status VARCHAR(20) DEFAULT 'pending',
+    -- statuses: pending, approved, rejected
+  is_identity_blocked BOOLEAN DEFAULT false,
+  phone_number   VARCHAR(20) UNIQUE,
+  phone_verified BOOLEAN DEFAULT false,
+  date_of_birth   DATE,
+  id_verified     BOOLEAN DEFAULT false,
+  profile_photo_hash VARCHAR(64),  -- perceptual hash for dedup
+  liveness_verified BOOLEAN DEFAULT false,
+
   -- Reputation
   follower_count  INTEGER DEFAULT 0,
   following_count INTEGER DEFAULT 0,
@@ -57,6 +80,8 @@ CREATE TABLE users (
   total_gifts_received INTEGER DEFAULT 0,
   xp              INTEGER DEFAULT 0,
   level           INTEGER DEFAULT 1,
+  total_tokens_earned INTEGER DEFAULT 0,  -- in ⏣ (tokens, not cents)
+  total_tokens_spent  INTEGER DEFAULT 0,
 
   -- Security
   is_banned       BOOLEAN DEFAULT false,
@@ -76,6 +101,7 @@ CREATE TABLE users (
 CREATE INDEX idx_users_username ON users USING gin (username gin_trgm_ops);
 CREATE INDEX idx_users_is_banned ON users (is_banned);
 CREATE INDEX idx_users_level ON users (level DESC);
+CREATE INDEX idx_users_verification ON users (verification_status);
 ```
 
 ### rooms
@@ -104,6 +130,23 @@ CREATE TABLE rooms (
   invite_code     VARCHAR(20) UNIQUE,
   is_banned       BOOLEAN DEFAULT false,
   ban_reason      TEXT,
+
+  -- Promo Room
+  is_promo        BOOLEAN DEFAULT false,
+  promo_charged   BOOLEAN DEFAULT false,
+  promo_rating_avg DECIMAL(2,1),
+
+  -- Age Restriction
+  is_adult        BOOLEAN DEFAULT false,
+  age_restriction INTEGER,  -- null or 18
+
+  -- Paid Features (per session)
+  screenshot_ban_enabled BOOLEAN DEFAULT false,
+  lurker_prevention_enabled BOOLEAN DEFAULT false,
+
+  -- Current topic
+  current_topic   TEXT,
+  qa_enabled      BOOLEAN DEFAULT false,
 
   -- Slots (4-person carousel)
   slot_0_user_id  UUID REFERENCES users(id),
@@ -144,6 +187,20 @@ CREATE INDEX idx_rooms_hashtags ON rooms USING gin (hashtags);
 CREATE INDEX idx_rooms_category ON rooms (category);
 CREATE INDEX idx_rooms_name ON rooms USING gin (name gin_trgm_ops);
 CREATE INDEX idx_rooms_invite ON rooms (invite_code) WHERE invite_code IS NOT NULL;
+CREATE INDEX idx_rooms_promo ON rooms (is_promo) WHERE is_promo = true;
+```
+
+### recording_consent
+
+```sql
+CREATE TABLE recording_consent (
+  room_id         UUID NOT NULL REFERENCES rooms(id),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  has_consented   BOOLEAN NOT NULL DEFAULT false,
+  is_blocked      BOOLEAN NOT NULL DEFAULT false,  -- host blocked this user
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (room_id, user_id)
+);
 ```
 
 ### room_co_hosts
@@ -223,8 +280,8 @@ CREATE TABLE messages (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id         UUID NOT NULL REFERENCES rooms(id),
   user_id         UUID NOT NULL REFERENCES users(id),
-  type            VARCHAR(10) NOT NULL DEFAULT 'text',
-    -- types: text, gif, gift, system, poll, clip, sub
+  type            VARCHAR(20) NOT NULL DEFAULT 'text',
+    -- types: text, gif, gift, system, poll, clip, sub, voice_note, welcome
   content         TEXT,
   gif_url         TEXT,
   mentions        UUID[],
@@ -238,11 +295,41 @@ CREATE TABLE messages (
   -- Poll metadata
   poll_id         UUID REFERENCES polls(id),
 
+  -- Voice note metadata
+  voice_note_url      TEXT,
+  voice_note_duration INTEGER,  -- ms
+  voice_note_transcript TEXT,
+  voice_note_played_by_host BOOLEAN DEFAULT false,
+
+  -- Welcome emoji
+  welcome_emoji   VARCHAR(10),
+
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_messages_room ON messages (room_id, created_at DESC);
 CREATE INDEX idx_messages_mentions ON messages USING gin (mentions);
+CREATE INDEX idx_messages_type_voice ON messages (room_id, type) WHERE type = 'voice_note';
+```
+
+### voice_notes
+
+```sql
+CREATE TABLE voice_notes (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id         UUID NOT NULL REFERENCES rooms(id),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  s3_key          TEXT NOT NULL,
+  duration_ms     INTEGER NOT NULL,
+  waveform        REAL[],      -- visual waveform data (normalized 0-1)
+  transcript      TEXT,         -- optional AI transcript
+  file_size_bytes INTEGER,
+  is_playing      BOOLEAN DEFAULT false,
+  played_by_host  BOOLEAN DEFAULT false,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_voice_notes_room ON voice_notes (room_id, created_at DESC);
 ```
 
 ### message_reactions (emoji reactions)
@@ -280,15 +367,135 @@ CREATE TABLE poll_votes (
 );
 ```
 
+### qa_questions (Promo Rooms)
+
+```sql
+CREATE TABLE qa_questions (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id         UUID NOT NULL REFERENCES rooms(id),
+  asker_id        UUID NOT NULL REFERENCES users(id),
+  question        TEXT NOT NULL,
+  answer          TEXT,
+  is_answered     BOOLEAN DEFAULT false,
+  is_dismissed    BOOLEAN DEFAULT false,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  answered_at     TIMESTAMPTZ
+);
+
+CREATE INDEX idx_qa_room ON qa_questions (room_id, created_at);
+```
+
+### promo_room_ratings
+
+```sql
+CREATE TABLE promo_room_ratings (
+  room_id         UUID NOT NULL REFERENCES rooms(id),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  rating          INTEGER CHECK (rating >= 1 AND rating <= 5),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (room_id, user_id)
+);
+```
+
+### claps
+
+```sql
+CREATE TABLE claps (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id         UUID NOT NULL REFERENCES rooms(id),
+  giver_id        UUID NOT NULL REFERENCES users(id),
+  receiver_id     UUID NOT NULL REFERENCES users(id),
+  count           INTEGER NOT NULL DEFAULT 1,
+  is_token_clap   BOOLEAN DEFAULT false,  -- paid with tokens vs free
+  token_amount    INTEGER,                 -- ⏣ spent if token clap
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_claps_room ON claps (room_id, receiver_id);
+CREATE INDEX idx_claps_giver ON claps (giver_id);
+CREATE INDEX idx_claps_receiver ON claps (receiver_id);
+```
+
+### squads
+
+```sql
+CREATE TABLE squads (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            VARCHAR(30) UNIQUE NOT NULL,
+  description     TEXT,
+  avatar_url      TEXT,
+  cover_url       TEXT,
+  brand_color     VARCHAR(7) DEFAULT '#000000',  -- hex color
+  tagline         VARCHAR(100),
+  member_count    INTEGER DEFAULT 0,
+  total_go_live_alerts INTEGER DEFAULT 0,
+  created_by      UUID NOT NULL REFERENCES users(id),
+  is_active       BOOLEAN DEFAULT true,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_squads_name ON squads USING gin (name gin_trgm_ops);
+```
+
+### squad_members
+
+```sql
+CREATE TABLE squad_members (
+  squad_id        UUID NOT NULL REFERENCES squads(id) ON DELETE CASCADE,
+  user_id         UUID NOT NULL REFERENCES users(id),
+  role            VARCHAR(20) NOT NULL DEFAULT 'member',
+    -- roles: super_admin, admin, moderator, member
+  invited_by      UUID NOT NULL REFERENCES users(id),
+  joined_at       TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (squad_id, user_id)
+);
+
+CREATE INDEX idx_squad_members_user ON squad_members (user_id);
+CREATE INDEX idx_squad_members_role ON squad_members (squad_id, role);
+```
+
+### squad_invites
+
+```sql
+CREATE TABLE squad_invites (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  squad_id        UUID NOT NULL REFERENCES squads(id) ON DELETE CASCADE,
+  invite_code     VARCHAR(36) UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+  invited_by      UUID NOT NULL REFERENCES users(id),
+  invitee_email   VARCHAR(255),
+  invitee_id      UUID REFERENCES users(id),
+  status          VARCHAR(20) DEFAULT 'pending',  -- pending, accepted, declined, expired
+  expires_at      TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '7 days'),
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_squad_invites_code ON squad_invites (invite_code);
+```
+
+### squad_muted_words
+
+```sql
+CREATE TABLE squad_muted_words (
+  squad_id        UUID NOT NULL REFERENCES squads(id) ON DELETE CASCADE,
+  word            VARCHAR(100) NOT NULL,
+  added_by        UUID NOT NULL REFERENCES users(id),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (squad_id, word)
+);
+```
+
 ### notifications
 
 ```sql
 CREATE TABLE notifications (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id),
-  type            VARCHAR(30) NOT NULL,
-    -- types: mention, room_invite, gift_received, follower, clap,
-    --        room_trending, sub_gifted, scheduled_room, poll_created
+  type            VARCHAR(40) NOT NULL,
+    -- types: mention, room_invite, gift_received, follower, clap, clap_spike,
+    --        room_trending, sub_gifted, scheduled_room, poll_created,
+    --        squad_go_live, squad_invite, voice_note_played, welcome_received,
+    --        promo_room_start, jailed, jail_appeal_update
   title           VARCHAR(200),
   body            TEXT,
   data            JSONB,
@@ -327,6 +534,7 @@ CREATE TABLE notification_preferences (
   follower_push   BOOLEAN DEFAULT true,
   room_invite_push BOOLEAN DEFAULT true,
   scheduled_room_push BOOLEAN DEFAULT true,
+  squad_go_live_email BOOLEAN DEFAULT true,  -- email squad alerts
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 ```
@@ -359,6 +567,41 @@ CREATE TABLE strikes (
 CREATE INDEX idx_strikes_user ON strikes (user_id, created_at DESC);
 ```
 
+### jail
+
+```sql
+CREATE TABLE jail (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID UNIQUE NOT NULL REFERENCES users(id),
+  reason          TEXT NOT NULL,
+  sentenced_by    UUID NOT NULL REFERENCES users(id),
+  report_id       UUID REFERENCES reports(id),
+  can_appeal      BOOLEAN DEFAULT true,
+  last_appeal_at  TIMESTAMPTZ,
+  entered_at      TIMESTAMPTZ DEFAULT NOW(),
+  released_at     TIMESTAMPTZ
+);
+
+CREATE INDEX idx_jail_active ON jail (user_id) WHERE released_at IS NULL;
+```
+
+### jail_appeals
+
+```sql
+CREATE TABLE jail_appeals (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  reason          TEXT NOT NULL,
+  status          VARCHAR(20) DEFAULT 'pending',  -- pending, approved, denied
+  reviewed_by     UUID REFERENCES users(id),
+  reviewed_at     TIMESTAMPTZ,
+  admin_notes     TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_jail_appeals_user ON jail_appeals (user_id, created_at DESC);
+```
+
 ### global_bans (admin-level)
 
 ```sql
@@ -383,12 +626,14 @@ CREATE TABLE ip_bans (
 );
 ```
 
-### muted_words (room-level)
+### room_muted_words (room-level)
 
 ```sql
 CREATE TABLE room_muted_words (
   room_id         UUID NOT NULL REFERENCES rooms(id),
   word            VARCHAR(100) NOT NULL,
+  scope           VARCHAR(20) NOT NULL DEFAULT 'all',  -- chat, transcript, all
+  action          VARCHAR(10) NOT NULL DEFAULT 'hide',  -- hide, delete, flag
   added_by        UUID NOT NULL REFERENCES users(id),
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (room_id, word)
@@ -406,27 +651,85 @@ CREATE TABLE user_muted_words (
 );
 ```
 
+### identity_verification
+
+```sql
+CREATE TABLE identity_verification (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID UNIQUE NOT NULL REFERENCES users(id),
+
+  -- Photo verification
+  photo_url       TEXT,
+  photo_hash      VARCHAR(64),    -- perceptual hash
+  photo_approved  BOOLEAN DEFAULT false,
+  photo_reviewed_by UUID REFERENCES users(id),
+
+  -- Liveness check
+  liveness_video_url TEXT,
+  liveness_passed BOOLEAN DEFAULT false,
+
+  -- Phone verification
+  phone_number    VARCHAR(20),
+  phone_verified  BOOLEAN DEFAULT false,
+
+  -- Age verification
+  date_of_birth   DATE,
+  id_document_url TEXT,            -- optional government ID
+  id_verified     BOOLEAN DEFAULT false,
+  id_reviewed_by  UUID REFERENCES users(id),
+
+  -- Overall status
+  status          VARCHAR(20) DEFAULT 'pending',  -- pending, approved, rejected, flagged
+  rejection_reason TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_identity_status ON identity_verification (status);
+```
+
 ### wallets
 
 ```sql
 CREATE TABLE wallets (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID UNIQUE NOT NULL REFERENCES users(id),
-  balance         INTEGER DEFAULT 0,  -- in cents
-  lifetime_earnings INTEGER DEFAULT 0,
-  lifetime_spent  INTEGER DEFAULT 0,
+  token_balance   INTEGER DEFAULT 0,     -- ⏣ token balance
+  token_lifetime_earned INTEGER DEFAULT 0,
+  token_lifetime_spent  INTEGER DEFAULT 0,
+  dollar_balance  INTEGER DEFAULT 0,     -- in cents (for direct USD)
+  lifetime_earnings INTEGER DEFAULT 0,   -- in cents
+  lifetime_spent  INTEGER DEFAULT 0,     -- in cents
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
-### transactions
+### token_transactions
+
+```sql
+CREATE TABLE token_transactions (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_user_id    UUID REFERENCES users(id),
+  to_user_id      UUID REFERENCES users(id),
+  amount          INTEGER NOT NULL,         -- ⏣ tokens
+  token_type      VARCHAR(30) NOT NULL,     -- clap, gift, purchase, cash_out, earning, promo_room, private_room, lurker_prevention, screenshot_ban
+  description     TEXT,
+  stripe_payment_id VARCHAR(255),           -- for purchases
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_token_transactions_from ON token_transactions (from_user_id, created_at DESC);
+CREATE INDEX idx_token_transactions_to ON token_transactions (to_user_id, created_at DESC);
+```
+
+### transactions (USD)
 
 ```sql
 CREATE TABLE transactions (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_wallet_id  UUID REFERENCES wallets(id),
   to_wallet_id    UUID REFERENCES wallets(id),
-  amount          INTEGER NOT NULL,
+  amount          INTEGER NOT NULL,        -- in cents
   type            VARCHAR(20) NOT NULL,
     -- types: deposit, gift, withdrawal, refund, subscription, subscription_payout
   stripe_payment_id VARCHAR(255),
@@ -530,6 +833,24 @@ CREATE TABLE gifs (
 );
 ```
 
+### teasers (going-live promos)
+
+```sql
+CREATE TABLE teasers (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id         UUID NOT NULL REFERENCES rooms(id),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  type            VARCHAR(20) NOT NULL,  -- quick_clip, vertical_reel, looping_gif, sticker_story
+  s3_key          TEXT NOT NULL,
+  thumbnail_key   TEXT,
+  duration_ms     INTEGER,
+  share_url       TEXT,                  -- embeddable URL with "Go Live" button
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_teasers_room ON teasers (room_id, created_at DESC);
+```
+
 ### user_blocks (global user-to-user)
 
 ```sql
@@ -550,12 +871,15 @@ CREATE TABLE reports (
   target_type     VARCHAR(10) NOT NULL,  -- user, room, message
   target_id       UUID NOT NULL,
   reason          VARCHAR(50) NOT NULL,
-    -- reasons: harassment, spam, nsfw, impersonation, hate_speech, other
+    -- reasons: harassment, spam, nsfw, impersonation, hate_speech, violence, illegal, other
   description     TEXT,
   is_resolved     BOOLEAN DEFAULT false,
   resolved_by     UUID REFERENCES users(id),
+  resolution      VARCHAR(20),  -- dismissed, jailed, banned, warned
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_reports_unresolved ON reports (is_resolved) WHERE is_resolved = false;
 ```
 
 ## Redis Usage
@@ -566,8 +890,12 @@ CREATE TABLE reports (
 | `room:{id}:lurker_count` | Counter | Hidden viewer count | Room lifetime |
 | `room:{id}:presence` | Set | User IDs currently in room | Room lifetime |
 | `room:{id}:typing` | Set | Users currently typing | 5 seconds |
+| `room:{id}:clap_count:{userId}` | Counter | Ongoing clap count per participant | Room lifetime |
+| `room:{id}:top_clapped` | String | Currently top-clapped user ID | Updated every 10s |
 | `user:{id}:online` | Boolean | Is user online? | 5 min (heartbeat) |
 | `rate_limit:{user}:{action}` | Counter | Rate limiting | Window |
 | `trending:rooms` | Sorted Set | Trending rooms by activity | 1 hour |
 | `trending:clips` | Sorted Set | Trending clips | 1 day |
+| `trending:squads` | Sorted Set | Trending squads by activity | 1 hour |
 | `global:banned_ips` | Set | Banned IPs cache | 1 hour |
+| `token:exchange_rate` | String | Current ⏣ → $ rate | 1 hour (static) |
