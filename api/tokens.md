@@ -58,6 +58,40 @@
 | Top clap-getter in a room | 15 ⏣ |
 | 1,000 total claps badge | 100 ⏣ (one-time) |
 | Refer a friend | 50 ⏣ |
+| Win a squad battle | 2x squad boost + share of pot |
+
+---
+
+## Gift Rewards System
+
+Gift rewards are **earned through Squad Battles** — the top tippers get exclusive rewards. No NFTs, just real platform value.
+
+### Battle Reward Tiers
+
+| Rank | Reward | Value |
+|------|--------|-------|
+| 🥇 **Top Tipper** (Winning Squad) | Custom emote (usable platform-wide) + squad chat shoutout | **500 ⏣** equivalent |
+| 🥈 **2nd Place** (Winning Squad) | 24h "Battle Champion" profile badge + 50 ⏣ bonus | **50 ⏣** |
+| 🥉 **3rd Place** (Winning Squad) | "Battle Supporter" badge + 25 ⏣ bonus | **25 ⏣** |
+| 🛡️ **Any Tipper** (All) | "Battle Contributor" badge | Recognition only |
+
+### Gift Reward API
+
+```
+GET    /v1/battles/rewards                  # My gift rewards
+GET    /v1/battles/:id/rewards              # Rewards for a specific battle
+POST   /v1/rewards/:id/claim                # Claim a reward
+GET    /v1/rewards/catalog                  # All available gift rewards
+```
+
+### Custom Emote System
+
+Top tippers get a **custom emote** — a small image they can use in any room chat:
+
+- Upload: 64×64 PNG, animated GIF supported
+- Usage: Any room, any squad, any time
+- Duration: Permanent (but can be replaced if they earn a new one)
+- Rarity: Only 1 per battle winner → emotes are scarce and valuable
 
 ---
 
@@ -78,6 +112,9 @@
 | Open promo room (coach/webinar) | 999 ⏣ per session ($9.99) |
 | Prevent lurkers (per room session) | 199 ⏣ ($1.99) |
 | Ban screenshots (per room session) | 149 ⏣ ($1.49) |
+| Anonymous room (per session) | 49 ⏣ ($0.49) |
+| Squad battle challenge | 100 ⏣ |
+| Squad battle accept | 50 ⏣ |
 
 ---
 

@@ -67,9 +67,10 @@ User deposits $ → Token balance (100 ⏣ = $1.00)
 | Subscribe: Ultra | 2,499 ⏣/mo ($24.99) |
 | Private Room (5 min) | 99 ⏣ ($0.99) |
 | Extend Private Room (+5 min) | 50 ⏣ ($0.50) |
-| **Promo Room (coach/webinar)** | **999 ⏣ per session ($9.99)** |
-| **Prevent Lurkers** | **199 ⏣ per session ($1.99)** |
-| **Ban Screenshots** | **149 ⏣ per session ($1.49)** |
+| **Promo Room (brand)** | **999 ⏣ per session ($9.99)** | Brand presentations, product promos |
+| **Prevent Lurkers** | **199 ⏣ per session ($1.99)** | Block hidden viewers |
+| **Ban Screenshots** | **149 ⏣ per session ($1.49)** | Prevent screenshotting |
+| **Anonymous Room** | **49 ⏣ per session ($0.49)** | Hide squad badges/names |
 
 ---
 
@@ -114,10 +115,17 @@ User deposits $ → Token balance (100 ⏣ = $1.00)
 - Extendable for 50 ⏣ per additional 5 min
 
 ### Promo Rooms (999 ⏣ / session)
-- For coaches, webinars, teaching, selling
+- **For brands** (companies, labels, stores) selling products or promoting
+- NOT for individual coaches or webinars — this platform is for community fun
 - Includes Q&A mode, screen share, raise hand, ratings
 - Always recorded for compliance
 - Max 2 hours per session, 500 attendees max
+
+### Anonymous Room (49 ⏣ / session)
+- Squad badges hidden for all participants
+- Usernames become "Anonymous X"
+- Host still sees real identities
+- Purpose: sensitive topics, confession sessions, gossip
 
 ### Lurker Prevention (199 ⏣ / session)
 - Host can enable: only visible viewers allowed

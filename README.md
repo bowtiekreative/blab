@@ -74,12 +74,14 @@ Inspired by [Blab](https://techcrunch.com/2016/08/14/blab-shuts-down-but-founder
 |---------|-------------|
 | 🎥 **4-Person Video Carousel** | The signature Blab experience — 4 slots, mute/unmute, slot queue |
 | 🏷️ **Squads** | Label-based identity groups. Invite-only. Email notification when squad goes live |
+| ⚔️ **Squad Battles** | Head-to-head live competitions. Viewers tip ⏣. Winner takes 70% of pot |
 | ✅ **Identity Verification** | No anonymous users. Face photo + liveness + phone + age verification |
 | 🎙️ **Voice Notes** | Audio messages in chat. Host can play for entire room and mute guests |
 | 👏 **Ongoing Claps** | Continuous clapping for specific participants — earn tokens from claps |
 | ⏣ **Token Economy** | In-app currency. Earn via engagement, exchange for cash (100 ⏣ = $1) |
 | 🎬 **GIFs & Reels** | Create teaser content from rooms to post on social media when going live |
-| 💰 **Promo Rooms** | Paid rooms ($9.99) for coaches, webinars, selling — main feed stays fun |
+| 🏢 **Promo Rooms** | Paid rooms ($9.99) for **brands** selling products — NOT for individual coaches |
+| 🎭 **Anonymous Rooms** | Paid ($0.49). Hide squad badges, anonymous display names |
 | 🔒 **Paid Private Rooms** | 5-min password rooms for $0.99 — prevent private rooms from dominating |
 | 🏛️ **3-Tier Governance** | Room (words/chat) → Squad (conduct/brand) → Platform (racism/illegal) |
 | 🚔 **Jail System** | Reported users get restricted — can only appeal, nothing else |
@@ -120,6 +122,8 @@ npm run dev
 ### Identity & Social
 - [Identity & Verification](./api/identity.md) — Photo, liveness, phone, age verification
 - [Squads](./api/squads.md) — Label-based identity groups, roles, go-live alerts
+- [Squad Battles](./api/squad-battles.md) — Head-to-head live competitions, tip ⏣ to win
+- [Tokens & Gift Rewards](./api/tokens.md) — Token economy, clap system, cash out, gift rewards
 
 ### Governance & Moderation
 - [Governance System](./api/governance.md) — 3-tier governance (Room → Squad → Platform)

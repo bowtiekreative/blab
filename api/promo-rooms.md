@@ -1,6 +1,20 @@
-# Promo Rooms (Coaches & Webinars) — Hustle Zone
+# Promo Rooms (Brands) — Hustle Zone
 
-> The core of Hustle Zone is **fun, community, jamming out** — not coaching or selling. But we allow promotional content as a **paid feature** to keep the main feed clean.
+> The core of Hustle Zone is **fun, community, jamming out** — not selling. If you're a **brand** (a company, a label, a store) and you want to promote, you pay for a Promo Room. If you're an individual trying to coach or sell, this isn't the platform for that.
+
+---
+
+## Philosophy
+
+| Type | Allowed? | Why |
+|------|----------|-----|
+| **Community member jamming out** | ✅ Free | This is what the platform is built for |
+| **Brand selling products** | ✅ 999 ⏣ ($9.99) via Promo Room | Brands have budgets — they pay to reach the audience |
+| **Coach / webinar / teacher** | ❌ Not welcome | The platform is for fun and connection, not courses. Use a webinar tool. |
+| **Influencer doing a Q&A** | ✅ Free (Standard Room) | Q&A is native to standard rooms — organic, not a promo |
+| **Record label showcasing artists** | ✅ 999 ⏣ Promo Room or Free Standard | Listening parties are community. Straight promo = pay. |
+
+**Clear line:** If you're selling something or teaching something, you need a Promo Room. If you're just hanging out and jamming, you're free.
 
 ---
 
@@ -9,7 +23,8 @@
 | Type | Cost | Audience | Purpose |
 |------|------|----------|---------|
 | **Standard Room** | 🆓 Free | All users | Hang out, jam, communicate, have fun |
-| **Promo Room** (Coach/Webinar) | **999 ⏣ / session** ($9.99) | Anyone who joins | Coaching, teaching, selling, presentations |
+| **Promo Room** (Brand) | **999 ⏣ / session** ($9.99) | Anyone who joins | Brand presentations, product launches, store promos |
+| **Anonymous Room** | **49 ⏣ / session** ($0.49) | All users | Squad badges hidden, anonymous display names |
 | **Private Room** | **99 ⏣ / 5 min** ($0.99) | Invite only | Quick side conversations |
 
 ---
@@ -20,22 +35,22 @@
 |------|--------|
 | **Cost** | 999 ⏣ per session (≈ $9.99) |
 | **Duration** | Up to 2 hours per session |
-| **Label** | Clearly marked as 🏷️ **Promo** in the room list |
-| **Who can open** | Any verified user with sufficient tokens |
-| **Content** | Coaching, webinars, teaching, presentations, selling |
-| **Chat** | Promo rooms can turn off chat (lecture mode) |
-| **Recording** | Always RECORDED by default (for compliance) |
+| **Label** | Clearly marked as 🏷️ **Promo** in the room list with brand name |
+| **Who can open** | Any verified user representing a **brand** (company, label, store) |
+| **Content** | Product launches, brand presentations, store promos, showcases |
+| **Chat** | Promo rooms can turn off chat (presentation mode) |
+| **Recording** | Always RECORDED by default (for compliance and brand review) |
 | **Refund** | No refunds — you paid, you present |
-| **Rating** | Attendees can rate the promo (1-5 stars) |
+| **Rating** | Attendees can rate the promo (1-5 stars) — low ratings affect future availability |
 
-### What Happens If You Promote Without a Promo Room
+### What Happens If You Sell/Coach Without a Promo Room
 
 - First offense: Warning + room temporarily paused
 - Second offense: 24-hour room creation ban
 - Third offense: Room creation suspended for 7 days
 - Repeated: Platform strike
 
-> **The philosophy:** If you want to sell or teach, pay for a Promo Room. The platform is for jamming out.
+> **The rule is simple:** If you're selling, pay up. The platform is for jamming out.
 
 ---
 
@@ -45,20 +60,20 @@
 |---------|--------------|------------|
 | 4-person carousel | ✅ | ✅ |
 | Voice notes | ✅ | ✅ |
-| Chat | ✅ | ✅ (can disable) |
+| Chat | ✅ | ✅ (can disable for presentation mode) |
 | Q&A | ❌ | ✅ (built-in Q&A) |
-| Screen share | ❌ | ✅ (coach can share slides) |
+| Screen share | ❌ | ✅ (brand can share slides/product demos) |
 | Raise hand | ❌ | ✅ (attendee queue) |
-| Record | Consent-based | Always on |
+| Record | Majority vote consent | Always on |
 | Tips/gifts | ✅ | ✅ |
-| Ratings | ❌ | ✅ (post-session) |
+| Ratings | ❌ | ✅ (post-session, affects future pricing) |
 | Attendee limit | No limit | 500 max |
 
 ---
 
 ## Q&A Mode (Promo Rooms)
 
-Promo rooms get a **native Q&A system**:
+Promo rooms get a **native Q&A system** for audience interaction:
 
 ```json
 {
@@ -74,13 +89,28 @@ Promo rooms get a **native Q&A system**:
 
 ### Q&A Flow
 1. Attendee submits a question (text or voice note)
-2. Coach sees questions in a queue
-3. Coach can:
+2. Brand host sees questions in a queue
+3. Host can:
    - Answer live (unmute attendee or speak)
    - Answer via voice note
    - Mark as answered
    - Skip/dismiss
 4. Answered questions appear in the session transcript
+
+---
+
+## GIFs/Reels for Going Live
+
+> Any room — standard or promo — can generate **teaser GIFs and reels** that users can share on social media to promote their live session.
+
+**See full spec:** [Teaser System in media.md](./media.md)
+
+| Type | Format | Duration |
+|------|--------|----------|
+| **Quick Clip** | MP4 (16:9) | 10-15s |
+| **Vertical Reel** | MP4 (9:16) | 15-30s |
+| **Looping GIF** | GIF (1:1 or 16:9) | 5-10s |
+| **Sticker/Story** | PNG (9:16) | Static |
 
 ---
 
@@ -93,56 +123,20 @@ GET    /v1/rooms/promo/:id/qa             # Q&A for promo room
 POST   /v1/rooms/promo/:id/qa             # Submit Q&A question
 POST   /v1/rooms/promo/:id/qa/:qid/answer # Answer Q&A (host only)
 POST   /v1/rooms/promo/:id/rate           # Rate promo room (1-5)
-```
-
----
-
-## Create GIFs/Reels for Going Live
-
-> Any room — standard or promo — can generate **teaser GIFs and reels** that users can share on social media to promote their live session.
-
-### How It Works
-
-1. Host clicks **"Create Teaser"** during or before a room
-2. They select a **10-30 second clip** from the room (or record a quick promo)
-3. System generates:
-   - **GIF** (looping, no audio — for Twitter, Instagram)
-   - **Reel** (vertical video with audio — for TikTok, Instagram Reels, YouTube Shorts)
-4. Teaser is auto-branded with:
-   - Room name
-   - Host username
-   - "🔴 LIVE NOW" overlay
-   - Hustle Zone watermark
-5. Host gets a **downloadable link + shareable URL**
-6. Optional: "Go Live" button embedded in the teaser URL
-
-### Teaser Types
-
-| Type | Format | Platform | Duration |
-|------|--------|----------|----------|
-| **Quick Clip** | MP4 (16:9) | X/Twitter, Facebook | 10-15s |
-| **Vertical Reel** | MP4 (9:16) | TikTok, Instagram Reels, YouTube Shorts | 15-30s |
-| **Looping GIF** | GIF (1:1 or 16:9) | Twitter, Discord, SMS | 5-10s |
-| **Sticker/Story** | PNG (9:16) | Instagram Story | Static image with overlay |
-
-### API
-
-```
-POST   /v1/rooms/:id/teaser              # Generate teaser GIF/reel
-GET    /v1/rooms/:id/teasers             # Existing teasers
-DELETE /v1/rooms/:id/teasers/:teaserId   # Delete teaser
+POST   /v1/rooms/promo/:id/screenshare    # Start screen share (host only)
 ```
 
 ---
 
 ## Price Summary
 
-| Feature | Standard (Free) | Promo (Paid) |
-|---------|----------------|--------------|
+| Feature | Standard (Free) | Promo (Brand, Paid) |
+|---------|----------------|---------------------|
 | Create room | ✅ Free | ❌ N/A |
 | Create promo room | ❌ N/A | ✅ 999 ⏣ ($9.99) |
-| Prevent lurkers | ❌ Paid feature | ✅ 199 ⏣ ($1.99) |
-| Ban screenshots | ❌ Paid feature | ✅ 149 ⏣ ($1.49) |
+| Prevent lurkers | ❌ Paid | ✅ 199 ⏣ ($1.99) |
+| Ban screenshots | ❌ Paid | ✅ 149 ⏣ ($1.49) |
+| Anonymous room | ❌ 49 ⏣ | ❌ 49 ⏣ |
 | Private room (5 min) | ❌ 99 ⏣ | ❌ 99 ⏣ |
-| Recording | ✅ Consent-based | ✅ Always on |
+| Recording | ✅ Majority vote | ✅ Always on |
 | Teaser GIF/reel | ✅ Free | ✅ Free |

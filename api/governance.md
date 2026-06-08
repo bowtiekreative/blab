@@ -61,7 +61,7 @@
 | Change room topic | Host only | Update the room's current topic/Q&A focus |
 | Enable slow mode | Host only | Limit message frequency |
 | Set age restriction | Host only | 18+ toggle |
-| Toggle recording consent | Host only | Block non-consenting users |
+| Start recording vote | Host only | Prompt carousel for recording consent |
 
 ### Room Muted Words
 
@@ -78,6 +78,44 @@ POST /v1/rooms/:id/muted-words
 - Hidden words are replaced with `[redacted]` — user is not notified
 - Deleted words remove the entire message
 - Flagged words go to the host for review
+
+### Recording Consent (Majority Vote)
+
+Recording works on **majority consent** — not unanimous:
+
+| Rule | Detail |
+|------|--------|
+| **Vote threshold** | Majority of carousel participants must consent (3 of 4, or 2 of 3) |
+| **Voters** | Only the 4 carousel slots vote — viewers are not counted |
+| **Prompt** | When host starts recording, a 15-second vote appears on each slot: "📹 Record this room?" |
+| **No response** | Defaults to **consent** (opt-out model) |
+| **Block non-consenting** | Host can remove a non-consenting participant from their slot (goes to queue) |
+| **Host override** | Host can record without majority — non-consenting participants get dropped from the recording |
+| **Visual indicator** | 🔴 REC icon shows on screen when recording is active |
+
+```
+POST   /v1/rooms/:id/record/vote             # Cast consent vote (yes/no)
+GET    /v1/rooms/:id/record/vote-status      # Current vote tally
+POST   /v1/rooms/:id/record/remove-non-consenting  # Host removes non-consenting from slot
+```
+
+### Anonymous Room Toggle (Paid)
+
+A host can make their room **anonymous** — users can join without their squad badge showing or their identity fully visible:
+
+| Rule | Detail |
+|------|--------|
+| **Cost** | **49 ⏣ ($0.49) per session** |
+| **Effect** | Squad badges hidden for all participants, usernames become "Anonymous X" |
+| **Duration** | Lasts the entire room session |
+| **Identity still verified** | Users are still verified — just shown as anonymous to others |
+| **Host sees real names** | Host always knows who's who |
+| **Purpose** | Sensitive topics, confession-style rooms, gossip sessions |
+
+```
+POST   /v1/rooms/:id/enable-anonymous      # Enable anonymous mode (49 ⏣)
+POST   /v1/rooms/:id/disable-anonymous     # Disable anonymous mode
+```
 
 ---
 
