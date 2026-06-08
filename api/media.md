@@ -1,4 +1,4 @@
-# Recording & GIFs — Hustle Zone
+# Recording, Clips & GIFs — Hustle Zone
 
 ## Recording Architecture
 
@@ -10,6 +10,13 @@ LiveKit SFU
     │   ├── MP4 file → S3/MinIO
     │   ├── Thumbnail frames → S3
     │   └── Metadata → PostgreSQL
+    │
+    │── Clip Creation (server-side FFmpeg)
+    │   │
+    │   ├── User selects timestamp from recording
+    │   ├── FFmpeg extracts 15-60s segment
+    │   ├── Adds overlay branding
+    │   └── Uploads to S3 → returns URL
     │
     │── GIF Creation (on-demand from recording)
         │
@@ -31,6 +38,23 @@ LiveKit SFU
 7. Recording appears in room's recording gallery
 ```
 
+## Clip Creation Flow
+
+```
+1. After recording ends, user selects 15-60s segment
+2. POST /rooms/:id/clips { recordingId, startTime, endTime, title }
+3. Server runs FFmpeg:
+   ffmpeg -i recording.mp4 -ss 00:05:00 -to 00:05:30 \
+          -c:v libx264 -c:a aac \
+          -vf "scale=1280:720" \
+          clip_output.mp4
+4. Optionally adds Hustle Zone watermark overlay
+5. Uploads to S3
+6. Returns clip URL + thumbnail
+7. Clip appears in room's clip gallery
+8. Trending clips algorithm promotes top clips
+```
+
 ## GIF Creation Flow
 
 ```
@@ -43,7 +67,6 @@ LiveKit SFU
 4. Uploads to S3
 5. Returns GIF URL
 6. GIF appears in room's GIF gallery
-7. Users can share GIF URL in chat
 ```
 
 ## Storage Structure
@@ -54,13 +77,38 @@ s3://hustle-zone-media/
 │   ├── {roomId}/
 │   │   ├── {recordingId}.mp4
 │   │   └── {recordingId}-thumb-{n}.jpg
+├── clips/
+│   ├── {roomId}/
+│   │   ├── {clipId}.mp4
+│   │   └── {clipId}-thumb.jpg
 ├── gifs/
 │   ├── {roomId}/
 │   │   └── {gifId}.gif
 ├── avatars/
 │   └── {userId}.jpg
+├── room-covers/
+│   └── {roomId}.jpg
 └── gifts/
     └── {giftId}.gif (animation assets)
+```
+
+## Clip Model
+
+```json
+{
+  "id": "uuid",
+  "roomId": "uuid",
+  "userId": "uuid",
+  "recordingId": "uuid",
+  "title": "string",
+  "url": "url",
+  "thumbnailUrl": "url",
+  "startTime": 0,
+  "endTime": 0,
+  "duration": 30,
+  "viewCount": 0,
+  "createdAt": "ISO8601"
+}
 ```
 
 ## LiveKit Egress Configuration

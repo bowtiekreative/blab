@@ -3,68 +3,84 @@
 ## Moderation Layers
 
 ```
-Layer 1: Room-Level (Host)
+Layer 0: Self (User)
+  ├── Block user (hide their content globally for you)
+  ├── Mute words/phrases (never see them in chat)
+  └── Report user/room/message
+
+Layer 1: Room-Level (Host + Co-Hosts + Moderators)
   ├── Kick from slot
   ├── Mute participant
   ├── Remove participant video
+  ├── Warn user
   ├── Ban from room
-  └── Delete messages
+  ├── Unban from room
+  ├── Delete messages
+  ├── Clear entire chat
+  ├── Enable slow mode
+  └── Set room to subs-only
 
-Layer 2: User-Level (Self)
-  ├── Block user (hide their content globally for you)
-  └── Report user/room/message
-
-Layer 3: Global (Admin)
-  ├── Ban user (cannot login)
+Layer 2: Admin (Platform Staff)
+  ├── Issue strikes (1-3, auto-ban at 3)
+  ├── Global user ban (cannot login)
   ├── Block room (removed from search/discover)
   ├── Ban IP address
   ├── Delete room permanently
+  ├── Remove strikes
+  ├── View reports dashboard
   └── Resolve reports
 ```
+
+## Permissions Matrix
+
+| Action | Host | Co-Host | Mod | Viewer |
+|--------|------|---------|-----|--------|
+| Kick from slot | ✅ | ✅ | ❌ | ❌ |
+| Mute participant | ✅ | ✅ | ✅ | ❌ |
+| Remove video | ✅ | ✅ | ✅ | ❌ |
+| Warn user | ✅ | ✅ | ✅ | ❌ |
+| Room ban | ✅ | ✅ | ❌ | ❌ |
+| Delete message | ✅ | ✅ | ✅ | ❌ |
+| Clear chat | ✅ | ✅ | ❌ | ❌ |
+| Slow mode toggle | ✅ | ❌ | ❌ | ❌ |
+| Promote co-host | ✅ | ❌ | ❌ | ❌ |
+| Promote mod | ✅ | ✅ | ❌ | ❌ |
+| End room | ✅ | ❌ | ❌ | ❌ |
+| Report | ✅ | ✅ | ✅ | ✅ |
+| Block user (self) | ✅ | ✅ | ✅ | ✅ |
+| Mute words (self) | ✅ | ✅ | ✅ | ✅ |
 
 ## Host Moderation Actions (Layer 1)
 
 ### Kick from Slot
 - Removes participant from their carousel slot
-- Slot goes empty, others can join
-- Kicked user can re-request (no cooldown by default)
+- Slot goes empty, others can join or queue next
 
 ### Room Ban
-- Kicked user **cannot** rejoin this room
+- Kicked user cannot rejoin this room
 - Stored in `room_bans` table
-- Host can unban later
+- Host/co-host can unban later
 
-### Room Ban Cooldown
-- No time limit — ban is permanent until removed
-- Host can see list of banned users and unban
+### Warn
+- User receives a system message + in-app notification
+- Visible in room as: `[System] @user has been warned`
 
-## User-to-User Blocking (Layer 2)
+### Clear Chat
+- Deletes all recent messages (last 5 min) from room
+- System message shows: `Chat has been cleared`
 
-- Blocks are **one-way** — user A blocks user B
-- Blocked user cannot:
-  - @mention the blocker
-  - Send messages visible to the blocker
-  - Request slots in rooms where blocker is host
-- The blocker never sees content from blocked user
-- Stored in `user_blocks` table
+## Strike System (Layer 2)
 
-## Admin Tools (Layer 3)
+- Admin issues strikes for serious violations
+- 3 strikes = automatic permanent ban
+- Strikes have a reason recorded
+- Admin can remove strikes on appeal
 
-### Global User Ban
-- User cannot authenticate
-- Active sessions invalidated immediately
-- Cannot create rooms or join rooms
-- Optional reason stored for reference
-
-### Room Blocking
-- Room removed from search results
-- Blocked rooms still accessible via direct link (for existing members)
-- Can be unblocked later
-
-### IP Banning
-- Applied at API gateway level
-- Blocks all requests from that IP
-- Used for persistent offenders, bots, DDOS
+| Strike | Consequence |
+|--------|-------------|
+| 1st | Warning + 24h mute |
+| 2nd | 7-day suspension |
+| 3rd | Permanent ban |
 
 ## Auto-Moderation (Future)
 
@@ -72,6 +88,7 @@ Layer 3: Global (Admin)
 - Spam detection (rapid repeated messages)
 - NSFW detection on uploaded avatars/video thumbnails
 - Rate limiting at endpoint level
+- Duplicate message detection
 
 ## Reporting
 
@@ -79,7 +96,7 @@ Layer 3: Global (Admin)
 {
   "type": "user | room | message",
   "targetId": "uuid",
-  "reason": "harassment | spam | nsfw | impersonation | other",
+  "reason": "harassment | spam | nsfw | impersonation | hate_speech | violence | other",
   "description": "string (optional)"
 }
 ```
