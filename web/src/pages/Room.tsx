@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { RoomSocket, type ServerEvent } from '../api/ws';
+import { api, type Gift } from '../api/client';
 import { useAuth } from '../store/auth';
 import { useLiveKit } from '../media/useLiveKit';
 import Carousel, { type Slot } from '../components/Carousel';
 import Chat, { type ChatMessage } from '../components/Chat';
+import GiftPicker from '../components/GiftPicker';
 
 const EMPTY_SLOTS: Slot[] = [0, 1, 2, 3].map((index) => ({ index, userId: null }));
 
@@ -19,6 +21,15 @@ export default function Room() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [viewerCount, setViewerCount] = useState(0);
   const [claps, setClaps] = useState<Record<string, number>>({});
+  const [balance, setBalance] = useState(0);
+  const [catalog, setCatalog] = useState<Gift[]>([]);
+  const [giftTarget, setGiftTarget] = useState<{ userId: string; username: string } | null>(null);
+
+  // Load wallet balance + gift catalog once.
+  useEffect(() => {
+    api.balance().then((w) => setBalance(w.balance)).catch(() => {});
+    api.giftCatalog().then(setCatalog).catch(() => {});
+  }, []);
 
   const topClappedUserId = useMemo(() => {
     let top: string | null = null;
@@ -82,6 +93,19 @@ export default function Room() {
       case 'clap_received':
         setClaps((prev) => ({ ...prev, [e.targetUserId as string]: e.totalClaps as number }));
         break;
+      case 'gift_sent':
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `gift-${Date.now()}-${Math.random()}`,
+            username: '',
+            type: 'system',
+            content: `🎁 @${e.fromUsername} sent ${e.icon} to a host`,
+          },
+        ]);
+        // Refresh my balance if I sent it.
+        if (e.fromUserId === me.id) api.balance().then((w) => setBalance(w.balance)).catch(() => {});
+        break;
       case 'viewer_entered':
         setViewerCount((c) => c + 1);
         break;
@@ -110,6 +134,22 @@ export default function Room() {
   const clap = (userId: string) =>
     sockRef.current?.send({ type: 'clap', roomId: id, targetUserId: userId });
 
+  function openGift(userId: string) {
+    const username = slots.find((s) => s.userId === userId)?.username ?? userId.slice(0, 6);
+    setGiftTarget({ userId, username });
+  }
+  async function sendGift(giftType: string) {
+    if (!id || !giftTarget) return;
+    try {
+      await api.sendGift(id, giftType, giftTarget.userId);
+      const w = await api.balance();
+      setBalance(w.balance);
+    } catch {
+      // Insufficient funds etc. surface via the disabled state in the picker.
+    }
+    setGiftTarget(null);
+  }
+
   const slotsWithClaps = slots.map((s) => ({ ...s, claps: s.userId ? claps[s.userId] ?? 0 : 0 }));
 
   return (
@@ -121,8 +161,11 @@ export default function Room() {
           </Link>
           <h1 className="text-xl font-bold">{roomName || 'Room'}</h1>
         </div>
-        <span className="text-sm text-zinc-400">
-          {mode === 'local' && <span className="mr-3 text-amber-400">local preview</span>}
+        <span className="flex items-center gap-3 text-sm text-zinc-400">
+          {mode === 'local' && <span className="text-amber-400">local preview</span>}
+          <span className="rounded-full bg-zinc-800 px-3 py-1 font-semibold text-amber-300">
+            ⏣ {balance}
+          </span>
           👁 {viewerCount} watching
         </span>
       </header>
@@ -136,11 +179,22 @@ export default function Room() {
           onJoin={joinSlot}
           onLeave={leaveSlot}
           onClap={clap}
+          onGift={openGift}
         />
         <div className="h-[70vh] lg:h-auto">
           <Chat messages={messages} onSend={sendMessage} />
         </div>
       </div>
+
+      {giftTarget && (
+        <GiftPicker
+          catalog={catalog}
+          recipientName={giftTarget.username}
+          balance={balance}
+          onSend={sendGift}
+          onClose={() => setGiftTarget(null)}
+        />
+      )}
     </div>
   );
 }

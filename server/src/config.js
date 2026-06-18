@@ -29,6 +29,13 @@ export const config = {
       return Boolean(this.url && this.apiKey && this.apiSecret);
     },
   },
+
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    get enabled() {
+      return Boolean(this.secretKey);
+    },
+  },
 };
 
 export const isProd = config.env === 'production';

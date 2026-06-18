@@ -16,6 +16,7 @@ interface Props {
   onJoin: (index: number) => void;
   onLeave: () => void;
   onClap: (userId: string) => void;
+  onGift: (userId: string) => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export default function Carousel({
   onJoin,
   onLeave,
   onClap,
+  onGift,
 }: Props) {
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -40,10 +42,11 @@ export default function Carousel({
           isMine={slot.userId === myUserId}
           isTopClapped={!!slot.userId && slot.userId === topClappedUserId}
           stream={slot.userId ? streams[slot.userId] ?? null : null}
-          canClap={!!slot.userId && slot.userId !== myUserId}
+          canInteract={!!slot.userId && slot.userId !== myUserId}
           onJoin={() => onJoin(slot.index)}
           onLeave={onLeave}
           onClap={() => slot.userId && onClap(slot.userId)}
+          onGift={() => slot.userId && onGift(slot.userId)}
         />
       ))}
     </div>
@@ -55,19 +58,21 @@ function SlotPanel({
   isMine,
   isTopClapped,
   stream,
-  canClap,
+  canInteract,
   onJoin,
   onLeave,
   onClap,
+  onGift,
 }: {
   slot: Slot;
   isMine: boolean;
   isTopClapped: boolean;
   stream: MediaStream | null;
-  canClap: boolean;
+  canInteract: boolean;
   onJoin: () => void;
   onLeave: () => void;
   onClap: () => void;
+  onGift: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -106,13 +111,21 @@ function SlotPanel({
               Leave
             </button>
           ) : (
-            canClap && (
-              <button
-                onClick={onClap}
-                className="absolute right-2 top-2 rounded bg-amber-500/90 px-2 py-1 text-xs font-semibold"
-              >
-                👏 Clap
-              </button>
+            canInteract && (
+              <div className="absolute right-2 top-2 flex gap-1">
+                <button
+                  onClick={onClap}
+                  className="rounded bg-amber-500/90 px-2 py-1 text-xs font-semibold"
+                >
+                  👏
+                </button>
+                <button
+                  onClick={onGift}
+                  className="rounded bg-pink-500/90 px-2 py-1 text-xs font-semibold"
+                >
+                  🎁
+                </button>
+              </div>
             )
           )}
         </>

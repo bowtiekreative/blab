@@ -74,7 +74,35 @@ export const api = {
   endRoom: (id: string) => request<{ id: string; isLive: boolean }>('POST', `/rooms/${id}/end`),
   roomToken: (id: string, publish: boolean) =>
     request<MediaToken>('POST', `/rooms/${id}/token`, { publish }),
+
+  // --- Economy (Phase 5) ---
+  balance: () => request<WalletBalance>('GET', '/tokens/balance'),
+  purchaseTokens: (tokens: number) =>
+    request<{ balance: number; simulated: boolean }>('POST', '/tokens/purchase', { tokens }),
+  giftCatalog: () => request<Gift[]>('GET', '/gifts/catalog'),
+  sendGift: (roomId: string, giftType: string, recipientId: string) =>
+    request<{ cost: number; recipientEarned: number }>('POST', '/gifts/send', {
+      roomId,
+      giftType,
+      recipientId,
+    }),
+  tokenClap: (roomId: string, targetUserId: string, count = 1) =>
+    request<{ totalClaps: number }>('POST', `/rooms/${roomId}/clap-tokens`, { targetUserId, count }),
 };
+
+export interface WalletBalance {
+  balance: number;
+  lifetimeEarned: number;
+  lifetimeSpent: number;
+  valueUsdCents: number;
+}
+
+export interface Gift {
+  type: string;
+  icon: string;
+  cost: number;
+  animation: string;
+}
 
 export type MediaToken =
   | { enabled: false }

@@ -8,6 +8,9 @@ import healthRoutes from './routes/health.js';
 import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
 import mediaRoutes from './routes/media.js';
+import tokenRoutes from './routes/tokens.js';
+import giftRoutes from './routes/gifts.js';
+import clapRoutes from './routes/claps.js';
 import wsGateway from './ws/gateway.js';
 import { closePool } from './db/index.js';
 
@@ -25,6 +28,9 @@ export async function build() {
   await fastify.register(authRoutes, { prefix: '/v1' });
   await fastify.register(roomRoutes, { prefix: '/v1' });
   await fastify.register(mediaRoutes, { prefix: '/v1' });
+  await fastify.register(tokenRoutes, { prefix: '/v1' });
+  await fastify.register(giftRoutes, { prefix: '/v1' });
+  await fastify.register(clapRoutes, { prefix: '/v1' });
 
   // WebSocket signaling gateway.
   await fastify.register(wsGateway);

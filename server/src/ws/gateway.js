@@ -1,5 +1,7 @@
 import { query } from '../db/index.js';
 import { hub } from '../realtime/hub.js';
+import { withTx, credit } from '../lib/wallet.js';
+import { CLAP_EARN_TOKENS, FREE_CLAPS_PER_ROOM } from '../lib/economy.js';
 
 /**
  * WebSocket gateway. Auth via `?token=<jwt>` query param (api/websocket.md).
@@ -87,10 +89,36 @@ export default async function wsGateway(fastify) {
       },
       clap: async (msg) => {
         if (!currentRoomId || !msg.targetUserId) return;
-        await query(
-          `INSERT INTO claps (room_id, giver_id, receiver_id, count) VALUES ($1, $2, $3, 1)`,
-          [currentRoomId, client.userId, msg.targetUserId],
+        if (msg.targetUserId === client.userId) return; // no self-claps
+
+        // Enforce the free-clap cap; beyond it the client must use clap-tokens.
+        const { rows: usedRows } = await query(
+          `SELECT COALESCE(SUM(count), 0)::int AS used
+             FROM claps WHERE room_id = $1 AND giver_id = $2 AND is_token_clap = false`,
+          [currentRoomId, client.userId],
         );
+        if (usedRows[0].used >= FREE_CLAPS_PER_ROOM) {
+          return hub.send(client, {
+            type: 'error',
+            code: 'FREE_CLAP_LIMIT',
+            message: `Free clap limit (${FREE_CLAPS_PER_ROOM}) reached — use token claps`,
+          });
+        }
+
+        // Record the free clap and credit the receiver, atomically.
+        await withTx(async (tx) => {
+          await tx.query(
+            `INSERT INTO claps (room_id, giver_id, receiver_id, count) VALUES ($1, $2, $3, 1)`,
+            [currentRoomId, client.userId, msg.targetUserId],
+          );
+          await credit(tx, msg.targetUserId, CLAP_EARN_TOKENS, {
+            type: 'clap_earning',
+            from: client.userId,
+            roomId: currentRoomId,
+            description: 'Earned from a free clap',
+          });
+        });
+
         const { rows } = await query(
           `SELECT COALESCE(SUM(count), 0)::int AS total
              FROM claps WHERE room_id = $1 AND receiver_id = $2`,

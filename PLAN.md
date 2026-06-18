@@ -42,7 +42,13 @@ own proprietary product.
       preview when LiveKit isn't configured. *(Runtime multi-party needs a
       LiveKit server — set `LIVEKIT_*` in `server/.env`.)*
 - [ ] **4 — Frontend**: login, room discovery, room view (2×2 carousel + chat + claps).
-- [ ] **5 — Economy**: tokens, wallet, claps→earnings, gift catalog, Stripe purchase/cashout.
+- [x] **5 — Economy**: ⏣ token wallet with an append-only ledger (atomic
+      credit/debit). Endpoints: balance, transactions, earnings-history,
+      exchange-rate, purchase, convert-to-cash (15% fee, monthly cap). Gift
+      catalog + send (recipient earns `GIFT_EARN_RATE`, broadcast over WS).
+      Free claps (20/room cap) and unlimited token claps both credit earnings;
+      clap leaderboard. Stripe is optional — simulated purchase/cashout when no
+      key is set. Frontend: wallet balance, gift picker, gift events in chat.
 - [ ] **6 — Community & safety**: squads, room/squad/platform governance, jail + appeals.
 - [ ] **7 — Growth & ops**: notifications/push, recordings/clips/teasers, admin dashboards.
 
