@@ -3,6 +3,7 @@ import { ok, fail } from '../lib/respond.js';
 import { withTx, debit, credit, InsufficientFunds } from '../lib/wallet.js';
 import { GIFT_CATALOG, GIFT_EARN_RATE } from '../lib/economy.js';
 import { hub } from '../realtime/hub.js';
+import { requireActive } from '../lib/guards.js';
 
 export default async function giftRoutes(fastify) {
   /** GET /v1/gifts/catalog */
@@ -22,7 +23,7 @@ export default async function giftRoutes(fastify) {
    * Sender pays the full cost; recipient earns GIFT_EARN_RATE of it; the
    * remainder is the platform fee. Broadcasts a gift_sent event to the room.
    */
-  fastify.post('/gifts/send', { preHandler: fastify.authenticate }, async (request, reply) => {
+  fastify.post('/gifts/send', { preHandler: [fastify.authenticate, requireActive('send gifts')] }, async (request, reply) => {
     const { roomId, giftType, recipientId } = request.body || {};
     const gift = GIFT_CATALOG[giftType];
     if (!gift) return fail(reply, 400, 'VALIDATION_ERROR', 'Unknown gift type');

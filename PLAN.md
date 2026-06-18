@@ -49,7 +49,16 @@ own proprietary product.
       Free claps (20/room cap) and unlimited token claps both credit earnings;
       clap leaderboard. Stripe is optional — simulated purchase/cashout when no
       key is set. Frontend: wallet balance, gift picker, gift events in chat.
-- [ ] **6 — Community & safety**: squads, room/squad/platform governance, jail + appeals.
+- [x] **6 — Community & safety**: three-tier governance + squads + jail.
+      Tier 2 squads (CRUD, invite-only membership, role hierarchy with
+      promote/demote/kick, conduct muted-words). Tier 1 room governance
+      (co-hosts, moderators, kick, room ban/unban, warn, mute, delete message,
+      clear chat, muted words) with live WS broadcasts. Tier 0 self-block +
+      reports. Tier 3 admin (strikes→escalation, global ban, send-to-jail,
+      block room, resolve reports, jail appeals approve/deny, IP bans). Jail
+      enforced across room create / join / chat / gift / clap. Frontend:
+      live moderation events + report button.
+      *(Deferred: squad go-live email alerts — needs email infra.)*
 - [ ] **7 — Growth & ops**: notifications/push, recordings/clips/teasers, admin dashboards.
 
 ## Local dev

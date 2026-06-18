@@ -65,6 +65,15 @@ class Hub {
     if (room.isEmpty()) this.rooms.delete(roomId);
   }
 
+  /** Clear any carousel slot held by a user (kick/ban). Returns the freed index or -1. */
+  freeUserSlot(roomId, userId) {
+    const room = this.rooms.get(roomId);
+    if (!room) return -1;
+    const idx = room.slots.indexOf(userId);
+    if (idx !== -1) room.slots[idx] = null;
+    return idx;
+  }
+
   /** Broadcast a JSON event to everyone in the room (optionally excluding one client). */
   broadcast(roomId, event, except = null) {
     const room = this.rooms.get(roomId);

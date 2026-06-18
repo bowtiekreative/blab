@@ -2,6 +2,7 @@ import { query } from '../db/index.js';
 import { hub } from '../realtime/hub.js';
 import { withTx, credit } from '../lib/wallet.js';
 import { CLAP_EARN_TOKENS, FREE_CLAPS_PER_ROOM } from '../lib/economy.js';
+import { enforcementState } from '../lib/guards.js';
 
 /**
  * WebSocket gateway. Auth via `?token=<jwt>` query param (api/websocket.md).
@@ -49,6 +50,13 @@ export default async function wsGateway(fastify) {
       leave_room: () => leaveCurrent(),
       send_message: async (msg) => {
         if (!currentRoomId || !msg.content) return;
+        const s = await enforcementState(client.userId);
+        if (s.banned || s.jailed || s.suspended) {
+          return hub.send(client, { type: 'error', code: 'RESTRICTED', message: 'You cannot chat right now' });
+        }
+        if (s.chatMuted) {
+          return hub.send(client, { type: 'error', code: 'CHAT_MUTED', message: 'You are temporarily muted' });
+        }
         const { rows } = await query(
           `INSERT INTO messages (room_id, user_id, type, content, gif_url, mentions)
                 VALUES ($1, $2, $3, $4, $5, $6)
@@ -156,6 +164,21 @@ export default async function wsGateway(fastify) {
 
     async function enterRoom(roomId, visible) {
       if (!roomId) return;
+
+      // Jailed / banned / suspended users cannot join rooms.
+      const s = await enforcementState(client.userId);
+      if (s.banned || s.jailed || s.suspended) {
+        return hub.send(client, { type: 'error', code: 'RESTRICTED', message: 'You cannot join rooms right now' });
+      }
+      // Room-level ban check.
+      const banned = await query('SELECT 1 FROM room_bans WHERE room_id = $1 AND user_id = $2', [
+        roomId,
+        client.userId,
+      ]);
+      if (banned.rowCount) {
+        return hub.send(client, { type: 'error', code: 'ROOM_BANNED', message: 'You are banned from this room' });
+      }
+
       if (currentRoomId && currentRoomId !== roomId) leaveCurrent();
       currentRoomId = roomId;
       const room = hub.join(roomId, client, { visible });

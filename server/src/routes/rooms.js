@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { query } from '../db/index.js';
 import { ok, fail } from '../lib/respond.js';
 import { hub } from '../realtime/hub.js';
+import { requireActive } from '../lib/guards.js';
 
 // Bare column list (for INSERT ... RETURNING). The aliased variant is used in SELECTs that join users.
 const ROOM_FIELDS = `id, host_id, name, description, cover_image_url, category,
@@ -59,7 +60,7 @@ export default async function roomRoutes(fastify) {
   });
 
   /** POST /v1/rooms — create a room. */
-  fastify.post('/rooms', { preHandler: fastify.authenticate }, async (request, reply) => {
+  fastify.post('/rooms', { preHandler: [fastify.authenticate, requireActive('create rooms')] }, async (request, reply) => {
     const { name, description, category, hashtags, isPrivate } = request.body || {};
     if (!name || name.length > 100) {
       return fail(reply, 400, 'VALIDATION_ERROR', 'name is required (≤100 chars)');

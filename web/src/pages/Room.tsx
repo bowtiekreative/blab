@@ -112,6 +112,54 @@ export default function Room() {
       case 'viewer_left':
         setViewerCount((c) => Math.max(0, c - 1));
         break;
+
+      // --- Tier 1 governance (live) ---
+      case 'message_deleted':
+        setMessages((prev) => prev.filter((m) => m.id !== e.messageId));
+        break;
+      case 'chat_cleared':
+        setMessages([]);
+        sysMessage('Chat was cleared by a moderator');
+        break;
+      case 'participant_kicked':
+        if (e.userId === me.id) {
+          void stopPublishing();
+          sysMessage('You were removed from the stage');
+        }
+        break;
+      case 'user_warned':
+        if (e.userId === me.id) sysMessage(`⚠️ You were warned${e.reason ? `: ${e.reason}` : ''}`);
+        break;
+      case 'user_banned_from_room':
+        if (e.userId === me.id) {
+          void stopPublishing();
+          alert('You have been banned from this room.');
+          window.location.assign('/');
+        }
+        break;
+      case 'room_banned':
+      case 'room_ended':
+        sysMessage(e.type === 'room_banned' ? 'This room was removed by staff' : 'The room has ended');
+        break;
+    }
+  }
+
+  function sysMessage(content: string) {
+    setMessages((prev) => [
+      ...prev,
+      { id: `sys-${Date.now()}-${Math.random()}`, username: '', type: 'system', content },
+    ]);
+  }
+
+  async function reportRoom() {
+    if (!id) return;
+    const reason = window.prompt('Report this room — reason (harassment, spam, nsfw, hate_speech, illegal, other):', 'other');
+    if (!reason) return;
+    try {
+      await api.report('room', id, reason.trim());
+      sysMessage('Report submitted. Thank you.');
+    } catch (err) {
+      sysMessage(`Could not submit report: ${(err as Error).message}`);
     }
   }
 
@@ -167,6 +215,9 @@ export default function Room() {
             ⏣ {balance}
           </span>
           👁 {viewerCount} watching
+          <button onClick={reportRoom} className="text-zinc-500 hover:text-red-400" title="Report room">
+            ⚐ Report
+          </button>
         </span>
       </header>
 

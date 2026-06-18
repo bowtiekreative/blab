@@ -11,6 +11,11 @@ import mediaRoutes from './routes/media.js';
 import tokenRoutes from './routes/tokens.js';
 import giftRoutes from './routes/gifts.js';
 import clapRoutes from './routes/claps.js';
+import squadRoutes from './routes/squads.js';
+import moderationRoutes from './routes/moderation.js';
+import reportRoutes from './routes/reports.js';
+import jailRoutes from './routes/jail.js';
+import adminRoutes from './routes/admin.js';
 import wsGateway from './ws/gateway.js';
 import { closePool } from './db/index.js';
 
@@ -31,6 +36,11 @@ export async function build() {
   await fastify.register(tokenRoutes, { prefix: '/v1' });
   await fastify.register(giftRoutes, { prefix: '/v1' });
   await fastify.register(clapRoutes, { prefix: '/v1' });
+  await fastify.register(squadRoutes, { prefix: '/v1' });
+  await fastify.register(moderationRoutes, { prefix: '/v1' });
+  await fastify.register(reportRoutes, { prefix: '/v1' });
+  await fastify.register(jailRoutes, { prefix: '/v1' });
+  await fastify.register(adminRoutes, { prefix: '/v1' });
 
   // WebSocket signaling gateway.
   await fastify.register(wsGateway);

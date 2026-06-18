@@ -3,13 +3,14 @@ import { ok, fail } from '../lib/respond.js';
 import { withTx, debit, credit, InsufficientFunds } from '../lib/wallet.js';
 import { CLAP_EARN_TOKENS } from '../lib/economy.js';
 import { hub } from '../realtime/hub.js';
+import { requireActive } from '../lib/guards.js';
 
 export default async function clapRoutes(fastify) {
   /**
    * POST /v1/rooms/:id/clap-tokens — unlimited paid claps (1 ⏣ = 1 clap).
    * Sender is debited; receiver earns 1 ⏣ per clap.
    */
-  fastify.post('/rooms/:id/clap-tokens', { preHandler: fastify.authenticate }, async (request, reply) => {
+  fastify.post('/rooms/:id/clap-tokens', { preHandler: [fastify.authenticate, requireActive('clap')] }, async (request, reply) => {
     const roomId = request.params.id;
     const { targetUserId } = request.body || {};
     const count = Math.max(1, Math.min(1000, Number(request.body?.count) || 1));

@@ -88,6 +88,10 @@ export const api = {
     }),
   tokenClap: (roomId: string, targetUserId: string, count = 1) =>
     request<{ totalClaps: number }>('POST', `/rooms/${roomId}/clap-tokens`, { targetUserId, count }),
+
+  // --- Moderation (Phase 6) ---
+  report: (targetType: 'user' | 'room' | 'message', targetId: string, reason: string) =>
+    request<{ id: string }>('POST', '/reports', { targetType, targetId, reason }),
 };
 
 export interface WalletBalance {
