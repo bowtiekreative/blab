@@ -2,7 +2,7 @@
 
 /**
  * ==============================================
- * MiroTalk P2P v.1.8.62 - Configuration File
+ * Hustle Zone v1.0.0 - Configuration File
  * ==============================================
  *
  * This file is the central configuration source.
@@ -105,14 +105,14 @@ module.exports = {
     // JWT
     // ==========================================
     jwt: {
-        key: process.env.JWT_KEY || 'mirotalk_jwt_secret',
+        key: process.env.JWT_KEY || 'hustle_zone_jwt_secret',
         exp: process.env.JWT_EXP || '1h',
     },
 
     // ==========================================
     // Presenters
     // ==========================================
-    presenters: parseJsonEnv(process.env.PRESENTERS, ['MiroTalk P2P']),
+    presenters: parseJsonEnv(process.env.PRESENTERS, ['Hustle Zone']),
 
     // ==========================================
     // API
@@ -293,50 +293,50 @@ module.exports = {
     brand: {
         htmlInjection: true,
         app: {
-            language: 'en', // https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
-            name: 'MiroTalk',
-            title: '<h1>MiroTalk</h1>Free browser based Real-time video calls.<br />Simple, Secure, Fast.',
+            language: 'en',
+            name: 'Hustle Zone',
+            title: '<h1>Hustle Zone</h1>Live streaming with the 4-person video carousel.<br />Community. Culture. Hustle.',
             description:
-                'Start your next video call with a single click. No download, plug-in, or login is required. Just get straight to talking, messaging, and sharing your screen.',
-            joinDescription: 'Pick a room name.<br />How about this one?',
-            joinButtonLabel: 'JOIN ROOM',
+                'Welcome to Hustle Zone — the 4-person video carousel platform. Join rooms, take a slot, clap for your favorites, earn tokens, and build your squad.',
+            joinDescription: 'Pick a room name.<br />Drop in.',
+            joinButtonLabel: 'ENTER ROOM',
             customizeRoomButtonLabel: 'CUSTOMIZE ROOM',
             joinLastLabel: 'Your recent room:',
         },
         og: {
             type: 'app-webrtc',
-            siteName: 'MiroTalk',
-            title: 'Click the link to make a call.',
+            siteName: 'Hustle Zone',
+            title: 'Click the link to join the room.',
             description:
-                'MiroTalk calling provides real-time HD quality and latency simply not available with traditional technology.',
-            image: 'https://p2p.mirotalk.com/images/preview.png',
-            url: 'https://p2p.mirotalk.com',
+                'Hustle Zone — WebRTC live streaming with a 4-person video carousel. Community, squads, tokens, and real-time connection.',
+            image: 'https://mirotalk-5u0p.srv620544.hstgr.cloud/images/hustle-zone-preview.png',
+            url: 'https://mirotalk-5u0p.srv620544.hstgr.cloud',
         },
         site: {
-            shortcutIcon: '../images/logo.svg',
-            appleTouchIcon: '../images/logo.svg',
-            landingTitle: 'MiroTalk a Free Secure Video Calls, Chat & Screen Sharing.',
-            newCallTitle: 'MiroTalk a Free Secure Video Calls, Chat & Screen Sharing.',
-            newCallRoomTitle: 'Pick name. <br />Share URL. <br />Start conference.',
+            shortcutIcon: '../images/hustle-zone-icon.svg',
+            appleTouchIcon: '../images/hustle-zone-icon.svg',
+            landingTitle: 'Hustle Zone — Live Streaming with the 4-Person Video Carousel.',
+            newCallTitle: 'Hustle Zone — Live Streaming with the 4-Person Video Carousel.',
+            newCallRoomTitle: 'Pick a name.<br />Drop in.<br />Start streaming.',
             newCallRoomDescription:
-                "Each room has its disposable URL. Just pick a room name and share your custom URL. It's that easy.",
-            loginTitle: 'MiroTalk - Host Protected login required.',
+                "Each room has its own link. Pick a name, share the URL, and get on the carousel. It's that easy.",
+            loginTitle: 'Hustle Zone - Host Protected login required.',
             loginHeading: 'Welcome back',
             loginDescription: 'Enter your credentials to continue.',
             loginButtonLabel: 'Login',
-            joinRoomTitle: 'Pick name.<br />Share URL.<br />Start conference.',
-            joinRoomButtonLabel: 'JOIN ROOM',
-            clientTitle: 'MiroTalk WebRTC Video call, Chat Room & Screen Sharing.',
-            privacyPolicyTitle: 'MiroTalk - privacy and policy.',
+            joinRoomTitle: 'Pick a name.<br />Drop in.<br />Start streaming.',
+            joinRoomButtonLabel: 'ENTER ROOM',
+            clientTitle: 'Hustle Zone — 4-Person Video Carousel & Chat.',
+            privacyPolicyTitle: 'Hustle Zone - privacy and policy.',
             stunTurnTitle: 'Test Stun/Turn Servers.',
-            notFoundTitle: 'MiroTalk - 404 Page not found.',
-            waitingRoomTitle: 'MiroTalk - Waiting for host to start the meeting',
+            notFoundTitle: 'Hustle Zone - 404 Page not found.',
+            waitingRoomTitle: 'Hustle Zone - Waiting for host to start the stream',
             waitingRoomHeading: 'Waiting for host...',
             waitingRoomDescription:
-                "The meeting hasn't started yet.<br />You'll join automatically when the host opens the room.",
+                "The stream hasn't started yet.<br />You'll join automatically when the host opens the room.",
             waitingRoomStatus: 'Checking room status...',
             waitingRoomReady: 'Room is ready! Joining...',
-            waitingRoomWaiting: 'Waiting for host to start the meeting...',
+            waitingRoomWaiting: 'Waiting for host to start the stream...',
             waitingRoomHostLink: 'Are you the host?',
             waitingRoomLoginLink: 'Login here',
             waitingRoomElapsedJust: 'Just started waiting',
@@ -344,45 +344,27 @@ module.exports = {
             waitingRoomSongUrl: '../sounds/waiting-music.mp3',
         },
         html: {
-            topSponsors: true,
+            topSponsors: false,
             features: true,
             browsers: true,
-            teams: true, // please keep me always true ;)
+            teams: true,
             tryEasier: true,
-            poweredBy: true,
-            sponsors: true,
-            pastSponsors: true,
-            advertisers: true,
-            supportUs: true,
+            poweredBy: false,
+            sponsors: false,
+            pastSponsors: false,
+            advertisers: false,
+            supportUs: false,
             footer: true,
         },
         about: {
-            imageUrl: '../images/mirotalk-logo.gif',
-            title: `WebRTC P2P v${packageJson.version}`,
+            imageUrl: '../images/hustle-zone-logo.gif',
+            title: `Hustle Zone v${packageJson.version}`,
             html: `
-                <button 
-                    id="support-button" 
-                    data-umami-event="Support button" 
-                    onclick="window.open('https://codecanyon.net/user/miroslavpejic85')">
-                    <i class="fas fa-heart" ></i>&nbsp;Support
-                </button>
-                <br /><br /><br />
-                Author:<a 
-                    id="linkedin-button" 
-                    data-umami-event="Linkedin button" 
-                    href="https://www.linkedin.com/in/miroslav-pejic-976a07101/" target="_blank"> 
-                    Miroslav Pejic
-                </a>
                 <br />
-                Email:<a 
-                    id="email-button" 
-                    data-umami-event="Email button" 
-                    href="mailto:miroslav.pejic.85@gmail.com?subject=MiroTalk P2P info"> 
-                    miroslav.pejic.85@gmail.com
-                </a>
+                <span>Hustle Zone — the spiritual successor to Blab (2015-2016).</span>
                 <br /><br />
                 <hr />
-                <span>&copy; 2025 MiroTalk P2P, all rights reserved</span>
+                <span>&copy; 2025 Hustle Zone, all rights reserved</span>
                 <hr />
             `,
         },
@@ -395,9 +377,7 @@ module.exports = {
             widgetType: 'support',
             supportWidget: {
                 position: 'top-right',
-                expertImages: [
-                    'https://photo.cloudron.pocketsolution.net/uploads/original/95/7d/a5f7f7a2c89a5fee7affda5f013c.jpeg',
-                ],
+                expertImages: [],
                 buttons: {
                     audio: true,
                     video: true,
@@ -413,7 +393,7 @@ module.exports = {
                     connectText: 'connect in < 5 seconds',
                     onlineText: 'We are online',
                     offlineText: 'We are offline',
-                    poweredBy: 'Powered by MiroTalk',
+                    poweredBy: 'Powered by Hustle Zone',
                 },
             },
         },

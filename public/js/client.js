@@ -7,7 +7,7 @@
 */
 
 /**
- * MiroTalk P2P - Client component
+ * Hustle Zone P2P - Client component
  *
  * @link    GitHub: https://github.com/miroslavpejic85/mirotalk
  * @link    Official Live demo: https://p2p.mirotalk.com
@@ -2017,7 +2017,7 @@ async function whoAreYou() {
         allowOutsideClick: false,
         allowEscapeKey: false,
         background: swBg,
-        title: brand.app?.name || 'MiroTalk P2P',
+        title: brand.app?.name || 'Hustle Zone P2P',
         position: 'center',
         input: 'text',
         inputPlaceholder: 'Enter your email or name',
@@ -8617,7 +8617,7 @@ function shareRoomByEmail() {
             const selectedDateTime = document.getElementById('datetimePicker').value;
             const roomPassword = isRoomLocked && thisRoomPassword ? 'Password: ' + thisRoomPassword + newLine : '';
             const email = '';
-            const emailSubject = `Please join our MiroTalk P2P Video Chat Meeting`;
+            const emailSubject = `Please join our Hustle Zone P2P Video Chat Meeting`;
             const emailBody = `The meeting is scheduled at: ${newLine} DateTime: ${selectedDateTime} ${newLine}${roomPassword}Click to join: ${roomURL} ${newLine}`;
             document.location = 'mailto:' + email + '?subject=' + emailSubject + '&body=' + emailBody;
         },
@@ -15952,7 +15952,7 @@ function handleKickedOut(config) {
 }
 
 /**
- * MiroTalk about info
+ * Hustle Zone about info
  */
 function showAbout() {
     playSound('newMessage');
@@ -16014,7 +16014,7 @@ function leaveFeedback() {
         imageUrl: images.feedback,
         position: 'top',
         title: 'Leave a feedback',
-        text: 'Do you want to rate your MiroTalk experience?',
+        text: 'Do you want to rate your Hustle Zone experience?',
         confirmButtonText: `Yes`,
         denyButtonText: `No`,
         cancelButtonText: `Cancel`,

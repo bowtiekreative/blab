@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MiroTalk Widget Factory - Main class for creating and managing widgets
+ * Hustle Zone Widget Factory - Main class for creating and managing widgets
  */
 class MiroTalkWidget {
     static DEFAULT_OPTIONS = {
@@ -29,11 +29,11 @@ class MiroTalkWidget {
             customMessages: {
                 heading: 'Need a hand?',
                 subheading:
-                    'Hop on a <span style="font-weight: bold">Free 1:1 or Group Consultation</span> with a MiroTalk Expert right now!',
+                    'Hop on a <span style="font-weight: bold">Free 1:1 or Group Consultation</span> with a Hustle Zone Expert right now!',
                 connectText: 'connect in < 10 seconds',
                 onlineText: 'We are online',
                 offlineText: 'We are offline',
-                poweredBy: 'Powered by <span class="mirotalk-powered-by">MiroTalk</span>',
+                poweredBy: 'Powered by <span class="mirotalk-powered-by">Hustle Zone</span>',
             },
         },
     };
@@ -576,7 +576,7 @@ class MiroTalkWidget {
         }
     }
 
-    openMiroTalk() {
+    openHustle Zone() {
         window.open(`https://${this.domain}`, '_blank');
     }
 
@@ -881,6 +881,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     } catch (error) {
-        console.error('Failed to auto-initialize MiroTalk Widget:', error);
+        console.error('Failed to auto-initialize Hustle Zone Widget:', error);
     }
 });
