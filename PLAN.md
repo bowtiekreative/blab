@@ -35,8 +35,12 @@ own proprietary product.
       `/health`, dev login, `/auth/me`.
 - [ ] **2 — Rooms & realtime**: rooms CRUD + discovery; WebSocket gateway (presence,
       chat, claps, reactions, slot join/leave/swap, typing) per `api/websocket.md`.
-- [ ] **3 — Media**: LiveKit integration; token minting; 4-slot publish/subscribe;
-      kick = revoke publish perms.
+- [x] **3 — Media**: LiveKit integration. Server mints scoped access tokens
+      (`POST /v1/rooms/:id/token`, identity = userId, room = roomId); client
+      `useLiveKit` hook publishes camera/mic on slot join, subscribes to remote
+      tracks, and maps streams to slots by userId. Degrades to local-only
+      preview when LiveKit isn't configured. *(Runtime multi-party needs a
+      LiveKit server — set `LIVEKIT_*` in `server/.env`.)*
 - [ ] **4 — Frontend**: login, room discovery, room view (2×2 carousel + chat + claps).
 - [ ] **5 — Economy**: tokens, wallet, claps→earnings, gift catalog, Stripe purchase/cashout.
 - [ ] **6 — Community & safety**: squads, room/squad/platform governance, jail + appeals.

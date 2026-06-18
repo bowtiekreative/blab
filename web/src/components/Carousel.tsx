@@ -9,9 +9,9 @@ export interface Slot {
 
 interface Props {
   slots: Slot[];
-  mySlot: number | null;
   myUserId: string;
-  localStream: MediaStream | null;
+  /** Media streams keyed by userId (own local stream + remote SFU streams). */
+  streams: Record<string, MediaStream>;
   topClappedUserId: string | null;
   onJoin: (index: number) => void;
   onLeave: () => void;
@@ -19,14 +19,13 @@ interface Props {
 }
 
 /**
- * The signature 4-person carousel (2×2). The local user's own camera renders
- * in their slot; remote participant video arrives via the SFU in Phase 3.
+ * The signature 4-person carousel (2×2). Each occupied slot renders the
+ * participant's media stream (local for yourself, SFU-forwarded for others).
  */
 export default function Carousel({
   slots,
-  mySlot,
   myUserId,
-  localStream,
+  streams,
   topClappedUserId,
   onJoin,
   onLeave,
@@ -40,7 +39,7 @@ export default function Carousel({
           slot={slot}
           isMine={slot.userId === myUserId}
           isTopClapped={!!slot.userId && slot.userId === topClappedUserId}
-          localStream={mySlot === slot.index ? localStream : null}
+          stream={slot.userId ? streams[slot.userId] ?? null : null}
           canClap={!!slot.userId && slot.userId !== myUserId}
           onJoin={() => onJoin(slot.index)}
           onLeave={onLeave}
@@ -55,7 +54,7 @@ function SlotPanel({
   slot,
   isMine,
   isTopClapped,
-  localStream,
+  stream,
   canClap,
   onJoin,
   onLeave,
@@ -64,7 +63,7 @@ function SlotPanel({
   slot: Slot;
   isMine: boolean;
   isTopClapped: boolean;
-  localStream: MediaStream | null;
+  stream: MediaStream | null;
   canClap: boolean;
   onJoin: () => void;
   onLeave: () => void;
@@ -72,8 +71,8 @@ function SlotPanel({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (videoRef.current) videoRef.current.srcObject = localStream;
-  }, [localStream]);
+    if (videoRef.current) videoRef.current.srcObject = stream;
+  }, [stream]);
 
   return (
     <div
@@ -83,8 +82,14 @@ function SlotPanel({
     >
       {slot.userId ? (
         <>
-          {localStream ? (
-            <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+          {stream ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted={isMine}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-3xl font-bold text-zinc-600">
               {(slot.username || '?')[0]?.toUpperCase()}

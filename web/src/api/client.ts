@@ -72,4 +72,10 @@ export const api = {
     request<Room>('POST', '/rooms', input),
   startRoom: (id: string) => request<{ id: string; isLive: boolean }>('POST', `/rooms/${id}/start`),
   endRoom: (id: string) => request<{ id: string; isLive: boolean }>('POST', `/rooms/${id}/end`),
+  roomToken: (id: string, publish: boolean) =>
+    request<MediaToken>('POST', `/rooms/${id}/token`, { publish }),
 };
+
+export type MediaToken =
+  | { enabled: false }
+  | { enabled: true; url: string; room: string; token: string; canPublish: boolean };

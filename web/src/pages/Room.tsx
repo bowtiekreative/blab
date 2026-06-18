@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { RoomSocket, type ServerEvent } from '../api/ws';
 import { useAuth } from '../store/auth';
+import { useLiveKit } from '../media/useLiveKit';
 import Carousel, { type Slot } from '../components/Carousel';
 import Chat, { type ChatMessage } from '../components/Chat';
 
@@ -11,16 +12,14 @@ export default function Room() {
   const { id } = useParams<{ id: string }>();
   const me = useAuth((s) => s.user)!;
   const sockRef = useRef<RoomSocket | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
+  const { mode, streams, startPublishing, stopPublishing } = useLiveKit(id, me.id);
 
   const [roomName, setRoomName] = useState('');
   const [slots, setSlots] = useState<Slot[]>(EMPTY_SLOTS);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [viewerCount, setViewerCount] = useState(0);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [claps, setClaps] = useState<Record<string, number>>({});
 
-  const mySlot = useMemo(() => slots.find((s) => s.userId === me.id)?.index ?? null, [slots, me.id]);
   const topClappedUserId = useMemo(() => {
     let top: string | null = null;
     let max = 0;
@@ -40,7 +39,6 @@ export default function Room() {
     return () => {
       off();
       sock.close();
-      localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -95,19 +93,15 @@ export default function Room() {
 
   async function joinSlot(index: number) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localStreamRef.current = stream;
-      setLocalStream(stream);
+      await startPublishing();
     } catch {
-      // Allow joining audio-less if camera denied; media wiring is Phase 3.
+      // Allow taking the slot even if camera/mic is denied.
     }
     sockRef.current?.send({ type: 'join_slot', roomId: id, slotIndex: index });
   }
 
   function leaveSlot() {
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
-    localStreamRef.current = null;
-    setLocalStream(null);
+    void stopPublishing();
     sockRef.current?.send({ type: 'leave_slot', roomId: id });
   }
 
@@ -127,15 +121,17 @@ export default function Room() {
           </Link>
           <h1 className="text-xl font-bold">{roomName || 'Room'}</h1>
         </div>
-        <span className="text-sm text-zinc-400">👁 {viewerCount} watching</span>
+        <span className="text-sm text-zinc-400">
+          {mode === 'local' && <span className="mr-3 text-amber-400">local preview</span>}
+          👁 {viewerCount} watching
+        </span>
       </header>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         <Carousel
           slots={slotsWithClaps}
-          mySlot={mySlot}
           myUserId={me.id}
-          localStream={localStream}
+          streams={streams}
           topClappedUserId={topClappedUserId}
           onJoin={joinSlot}
           onLeave={leaveSlot}

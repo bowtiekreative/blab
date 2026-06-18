@@ -7,6 +7,7 @@ import authPlugin from './plugins/auth.js';
 import healthRoutes from './routes/health.js';
 import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
+import mediaRoutes from './routes/media.js';
 import wsGateway from './ws/gateway.js';
 import { closePool } from './db/index.js';
 
@@ -23,6 +24,7 @@ export async function build() {
   await fastify.register(healthRoutes);
   await fastify.register(authRoutes, { prefix: '/v1' });
   await fastify.register(roomRoutes, { prefix: '/v1' });
+  await fastify.register(mediaRoutes, { prefix: '/v1' });
 
   // WebSocket signaling gateway.
   await fastify.register(wsGateway);
