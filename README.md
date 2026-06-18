@@ -33,7 +33,7 @@ Inspired by [Blab](https://techcrunch.com/2016/08/14/blab-shuts-down-but-founder
 | Layer | Technology |
 |-------|-----------|
 | **Runtime** | Node.js + Fastify |
-| **Real-time** | WebSocket (Socket.IO) + WebRTC |
+| **Real-time** | WebSocket (`@fastify/websocket`) + WebRTC |
 | **Database** | PostgreSQL + Redis |
 | **Media** | LiveKit (WebRTC SFU) + FFmpeg |
 | **Storage** | S3/MinIO (recordings, GIFs, avatars, voice notes, teasers) |
@@ -94,22 +94,28 @@ Inspired by [Blab](https://techcrunch.com/2016/08/14/blab-shuts-down-but-founder
 
 ## Quick Start
 
+The repo is a two-app monorepo: `server/` (Fastify API + WebSocket) and `web/`
+(React + Vite). Each is self-contained.
+
 ```bash
-# Clone
 git clone https://github.com/bowtiekreative/blab.git
 cd blab
 
-# Install
+# 1. Backend
+cd server
 cp .env.example .env
 npm install
+createdb hustlezone        # PostgreSQL must be running
+npm run migrate            # apply schema
+npm run dev                # http://localhost:3000
 
-# Database
-docker compose up -d
-npx prisma migrate dev
-
-# Start
-npm run dev
+# 2. Frontend (in a second terminal)
+cd web
+npm install
+npm run dev                # http://localhost:5173 (proxies /v1 + /ws to :3000)
 ```
+
+See [PLAN.md](./PLAN.md) for the phased build roadmap.
 
 ## Documentation
 

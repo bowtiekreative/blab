@@ -5,17 +5,15 @@ platform with chat, claps, a token economy, squads, and governance.
 
 ## Why "clean-room"
 
-This codebase originally started as a fork of **MiroTalk P2P (AGPL-3.0)**, which carries
-strong copyleft obligations (network-use source disclosure). To own our IP outright and
-license it freely, the new application is built **from our own API specification** in
-[`/api`](./api) — **no MiroTalk code is copied or referenced**.
+This codebase is built **entirely from our own API specification** in [`/api`](./api) —
+original code that we own outright and can license freely. An earlier exploratory
+fork of a third-party **AGPL-3.0** video project was fully removed, since AGPL's
+network-use source-disclosure obligations are incompatible with shipping this as our
+own proprietary product.
 
-- `server/` — our backend (clean-room, original code)
-- `web/` — our frontend (clean-room, original code)
+- `server/` — our backend (original code)
+- `web/` — our frontend (original code)
 - `api/` — our API/domain spec (the source of truth, written by us)
-- `app/`, `public/`, root `package.json` — **legacy MiroTalk (AGPL)**, kept only as a
-  temporary reference. **To be deleted before any production deploy or distribution** so
-  the clean-room boundary is airtight.
 
 ## Stack
 
