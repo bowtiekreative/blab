@@ -16,6 +16,8 @@ import moderationRoutes from './routes/moderation.js';
 import reportRoutes from './routes/reports.js';
 import jailRoutes from './routes/jail.js';
 import adminRoutes from './routes/admin.js';
+import notificationRoutes from './routes/notifications.js';
+import recordingRoutes from './routes/recordings.js';
 import wsGateway from './ws/gateway.js';
 import { closePool } from './db/index.js';
 
@@ -41,6 +43,8 @@ export async function build() {
   await fastify.register(reportRoutes, { prefix: '/v1' });
   await fastify.register(jailRoutes, { prefix: '/v1' });
   await fastify.register(adminRoutes, { prefix: '/v1' });
+  await fastify.register(notificationRoutes, { prefix: '/v1' });
+  await fastify.register(recordingRoutes, { prefix: '/v1' });
 
   // WebSocket signaling gateway.
   await fastify.register(wsGateway);

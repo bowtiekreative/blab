@@ -28,6 +28,40 @@ class Hub {
   constructor() {
     /** @type {Map<string, Room>} */
     this.rooms = new Map();
+    /** userId -> Set<Client>, across all rooms, for direct delivery (notifications). */
+    this.userSockets = new Map();
+  }
+
+  /** Register a connected client for direct user-targeted delivery. */
+  registerUser(client) {
+    let set = this.userSockets.get(client.userId);
+    if (!set) {
+      set = new Set();
+      this.userSockets.set(client.userId, set);
+    }
+    set.add(client);
+  }
+
+  unregisterUser(client) {
+    const set = this.userSockets.get(client.userId);
+    if (!set) return;
+    set.delete(client);
+    if (set.size === 0) this.userSockets.delete(client.userId);
+  }
+
+  /** Send an event to every live socket a user has open. Returns true if delivered. */
+  sendToUser(userId, event) {
+    const set = this.userSockets.get(userId);
+    if (!set || set.size === 0) return false;
+    const payload = JSON.stringify(event);
+    let delivered = false;
+    for (const client of set) {
+      if (client.socket.readyState === 1) {
+        client.socket.send(payload);
+        delivered = true;
+      }
+    }
+    return delivered;
   }
 
   room(roomId) {

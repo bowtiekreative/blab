@@ -59,7 +59,15 @@ own proprietary product.
       enforced across room create / join / chat / gift / clap. Frontend:
       live moderation events + report button.
       *(Deferred: squad go-live email alerts — needs email infra.)*
-- [ ] **7 — Growth & ops**: notifications/push, recordings/clips/teasers, admin dashboards.
+- [x] **7 — Growth & ops**: notifications (persisted + live WS delivery, wired
+      into gifts/mentions/follows), follows graph, push-subscription +
+      preference endpoints. Recordings + clips/gifs/teasers (real metadata API;
+      media assets marked 'simulated' until Egress/FFmpeg/S3 are wired).
+      Admin dashboards: overview metrics, user list/detail, room tabs, revenue
+      + top-creators/top-rooms analytics. Frontend: admin dashboard page
+      (reports queue + jail release) and a notifications bell.
+      *(Deferred: real LiveKit Egress recording, FFmpeg clip rendering, Web
+      Push/FCM fan-out, identity-verification queue — all need external infra.)*
 
 ## Local dev
 

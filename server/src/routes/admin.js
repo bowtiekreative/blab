@@ -9,6 +9,116 @@ import { hub } from '../realtime/hub.js';
 export default async function adminRoutes(fastify) {
   const admin = { preHandler: fastify.authenticateAdmin };
 
+  // ===========================================================================
+  // Dashboards & analytics (api/admin-dashboard.md)
+  // ===========================================================================
+
+  /** GET /v1/admin/dashboard — platform overview metrics. */
+  fastify.get('/admin/dashboard', admin, async () => {
+    const { rows } = await query(`
+      SELECT
+        (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL)::int AS total_users,
+        (SELECT COUNT(*) FROM users WHERE last_seen_at > NOW() - INTERVAL '1 day')::int AS dau,
+        (SELECT COUNT(*) FROM users WHERE last_seen_at > NOW() - INTERVAL '30 days')::int AS mau,
+        (SELECT COUNT(*) FROM rooms WHERE created_at > NOW() - INTERVAL '1 day')::int AS rooms_today,
+        (SELECT COUNT(*) FROM rooms WHERE is_live = true)::int AS live_now,
+        (SELECT COALESCE(SUM(token_balance), 0) FROM wallets)::int AS tokens_in_circulation,
+        (SELECT COUNT(*) FROM reports WHERE is_resolved = false)::int AS report_queue,
+        (SELECT COUNT(*) FROM jail WHERE released_at IS NULL)::int AS jail_population
+    `);
+    return ok(rows[0]);
+  });
+
+  /** GET /v1/admin/users — list with status filter + search. */
+  fastify.get('/admin/users', admin, async (request) => {
+    const { status, q } = request.query || {};
+    const where = ['deleted_at IS NULL'];
+    const params = [];
+    if (q) {
+      params.push(`%${q}%`);
+      where.push(`(username ILIKE $${params.length} OR email ILIKE $${params.length})`);
+    }
+    if (status === 'banned') where.push('is_banned = true');
+    else if (status === 'jailed') where.push('is_in_jail = true');
+    else if (status === 'suspended') where.push('suspended_until > NOW()');
+    else if (status === 'active') where.push('is_banned = false AND is_in_jail = false');
+
+    const { rows } = await query(
+      `SELECT id, username, email, level, strikes, is_banned, is_in_jail, created_at, last_seen_at
+         FROM users WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT 100`,
+      params,
+    );
+    return ok(rows);
+  });
+
+  /** GET /v1/admin/users/:id — detail (profile, wallet, strikes, counts). */
+  fastify.get('/admin/users/:id', admin, async (request, reply) => {
+    const { rows } = await query(
+      `SELECT id, username, display_name, email, bio, level, xp, strikes,
+              is_banned, ban_reason, is_in_jail, suspended_until, verification_level,
+              follower_count, following_count, created_at, last_seen_at
+         FROM users WHERE id = $1`,
+      [request.params.id],
+    );
+    if (!rows[0]) return fail(reply, 404, 'NOT_FOUND', 'User not found');
+    const [wallet, strikes, roomsHosted, reportsAgainst] = await Promise.all([
+      query('SELECT token_balance, token_lifetime_earned, token_lifetime_spent FROM wallets WHERE user_id = $1', [request.params.id]),
+      query('SELECT id, reason, created_at FROM strikes WHERE user_id = $1 ORDER BY created_at DESC', [request.params.id]),
+      query('SELECT COUNT(*)::int AS n FROM rooms WHERE host_id = $1', [request.params.id]),
+      query(`SELECT COUNT(*)::int AS n FROM reports WHERE target_type = 'user' AND target_id = $1`, [request.params.id]),
+    ]);
+    return ok({
+      ...rows[0],
+      wallet: wallet.rows[0] || { token_balance: 0 },
+      strikeHistory: strikes.rows,
+      roomsHosted: roomsHosted.rows[0].n,
+      reportsAgainst: reportsAgainst.rows[0].n,
+    });
+  });
+
+  /** GET /v1/admin/rooms — tabs: live | recent | blocked. */
+  fastify.get('/admin/rooms', admin, async (request) => {
+    const tab = request.query?.tab || 'live';
+    let where = 'r.is_live = true';
+    if (tab === 'recent') where = `r.created_at > NOW() - INTERVAL '24 hours'`;
+    else if (tab === 'blocked') where = 'r.is_banned = true';
+    const { rows } = await query(
+      `SELECT r.id, r.name, r.is_live, r.is_banned, r.created_at, u.username AS host_username
+         FROM rooms r JOIN users u ON u.id = r.host_id
+        WHERE ${where} ORDER BY r.created_at DESC LIMIT 100`,
+    );
+    return ok(rows);
+  });
+
+  /** GET /v1/admin/analytics/revenue — ⏣ flow by category. */
+  fastify.get('/admin/analytics/revenue', admin, async () => {
+    const { rows } = await query(
+      `SELECT token_type, COUNT(*)::int AS count, COALESCE(SUM(amount), 0)::int AS tokens
+         FROM token_transactions GROUP BY token_type ORDER BY tokens DESC`,
+    );
+    return ok(rows);
+  });
+
+  /** GET /v1/admin/analytics/top-creators — by lifetime ⏣ earned. */
+  fastify.get('/admin/analytics/top-creators', admin, async () => {
+    const { rows } = await query(
+      `SELECT u.id, u.username, w.token_lifetime_earned AS earned
+         FROM wallets w JOIN users u ON u.id = w.user_id
+        ORDER BY w.token_lifetime_earned DESC LIMIT 10`,
+    );
+    return ok(rows);
+  });
+
+  /** GET /v1/admin/analytics/top-rooms — by total claps. */
+  fastify.get('/admin/analytics/top-rooms', admin, async () => {
+    const { rows } = await query(
+      `SELECT r.id, r.name, COALESCE(SUM(c.count), 0)::int AS claps
+         FROM rooms r LEFT JOIN claps c ON c.room_id = r.id
+        GROUP BY r.id, r.name ORDER BY claps DESC LIMIT 10`,
+    );
+    return ok(rows);
+  });
+
   /**
    * POST /v1/admin/users/:id/strike — issue a strike and apply the escalating
    * consequence (1st: 72h chat mute, 2nd: 7d suspension, 3rd: permanent ban).

@@ -4,6 +4,7 @@ import { useAuth } from './store/auth';
 import Login from './pages/Login';
 import Discover from './pages/Discover';
 import Room from './pages/Room';
+import Admin from './pages/Admin';
 
 export default function App() {
   const { user, loading, init } = useAuth();
@@ -23,6 +24,7 @@ export default function App() {
           <>
             <Route path="/" element={<Discover />} />
             <Route path="/room/:id" element={<Room />} />
+            {user.is_admin && <Route path="/admin" element={<Admin />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (

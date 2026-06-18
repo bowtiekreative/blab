@@ -35,6 +35,16 @@ export interface User {
   avatar_url: string | null;
   level: number;
   total_claps: number;
+  is_admin?: boolean;
+}
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string | null;
+  body: string | null;
+  is_read: boolean;
+  created_at: string;
 }
 
 export interface RoomSlot {
@@ -92,7 +102,36 @@ export const api = {
   // --- Moderation (Phase 6) ---
   report: (targetType: 'user' | 'room' | 'message', targetId: string, reason: string) =>
     request<{ id: string }>('POST', '/reports', { targetType, targetId, reason }),
+
+  // --- Notifications (Phase 7) ---
+  notifications: () => request<AppNotification[]>('GET', '/notifications'),
+  readAllNotifications: () => request<{ read: boolean }>('POST', '/notifications/read-all'),
+
+  // --- Admin (Phase 7) ---
+  adminDashboard: () => request<Record<string, number>>('GET', '/admin/dashboard'),
+  adminReports: () => request<AdminReport[]>('GET', '/admin/reports'),
+  resolveReport: (id: string, resolution: string) =>
+    request<{ id: string }>('POST', `/admin/reports/${id}/resolve`, { resolution }),
+  adminJail: () => request<AdminJailEntry[]>('GET', '/admin/jail'),
+  releaseFromJail: (userId: string) =>
+    request<{ released: boolean }>('POST', `/admin/users/${userId}/release-from-jail`),
 };
+
+export interface AdminReport {
+  id: string;
+  reporter_id: string;
+  target_type: string;
+  target_id: string;
+  reason: string;
+  created_at: string;
+}
+
+export interface AdminJailEntry {
+  user_id: string;
+  username: string;
+  reason: string;
+  entered_at: string;
+}
 
 export interface WalletBalance {
   balance: number;

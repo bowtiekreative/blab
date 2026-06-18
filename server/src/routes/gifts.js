@@ -4,6 +4,7 @@ import { withTx, debit, credit, InsufficientFunds } from '../lib/wallet.js';
 import { GIFT_CATALOG, GIFT_EARN_RATE } from '../lib/economy.js';
 import { hub } from '../realtime/hub.js';
 import { requireActive } from '../lib/guards.js';
+import { notify } from '../lib/notify.js';
 
 export default async function giftRoutes(fastify) {
   /** GET /v1/gifts/catalog */
@@ -87,6 +88,13 @@ export default async function giftRoutes(fastify) {
       fromUserId: request.user.sub,
       fromUsername: request.user.username,
       toUserId: recipientId,
+    });
+
+    await notify(recipientId, {
+      type: 'gift_received',
+      title: `${gift.icon} Gift received!`,
+      body: `@${request.user.username} sent you ${giftType} (+${earned} ⏣)`,
+      data: { roomId, giftType, fromUserId: request.user.sub, earned },
     });
 
     return ok({ giftType, cost: gift.cost, recipientEarned: earned });

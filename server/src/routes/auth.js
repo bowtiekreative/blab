@@ -22,7 +22,7 @@ export default async function authRoutes(fastify) {
     const { rows } = await query(
       `SELECT id, username, display_name, avatar_url, bio, verification_level,
               follower_count, following_count, total_claps, xp, level,
-              is_banned, is_in_jail, created_at, last_seen_at
+              is_banned, is_in_jail, is_admin, created_at, last_seen_at
          FROM users WHERE id = $1 AND deleted_at IS NULL`,
       [request.user.sub],
     );

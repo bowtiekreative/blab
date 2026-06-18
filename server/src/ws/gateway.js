@@ -3,6 +3,7 @@ import { hub } from '../realtime/hub.js';
 import { withTx, credit } from '../lib/wallet.js';
 import { CLAP_EARN_TOKENS, FREE_CLAPS_PER_ROOM } from '../lib/economy.js';
 import { enforcementState } from '../lib/guards.js';
+import { notify } from '../lib/notify.js';
 
 /**
  * WebSocket gateway. Auth via `?token=<jwt>` query param (api/websocket.md).
@@ -31,6 +32,7 @@ export default async function wsGateway(fastify) {
       avatarUrl: user.avatarUrl || null,
     };
     let currentRoomId = null;
+    hub.registerUser(client);
 
     const leaveCurrent = () => {
       if (!currentRoomId) return;
@@ -84,14 +86,14 @@ export default async function wsGateway(fastify) {
             createdAt: rows[0].created_at,
           },
         });
-        // Notify mentioned users present in the room.
+        // Persist + deliver a notification to each mentioned user.
         for (const uid of msg.mentions || []) {
-          hub.broadcast(currentRoomId, {
+          if (uid === client.userId) continue;
+          await notify(uid, {
             type: 'mention',
-            fromUserId: client.userId,
-            fromUsername: client.username,
-            roomId: currentRoomId,
-            message: msg.content,
+            title: `@${client.username} mentioned you`,
+            body: msg.content,
+            data: { roomId: currentRoomId, fromUserId: client.userId },
           });
         }
       },
@@ -270,6 +272,9 @@ export default async function wsGateway(fastify) {
       }
     });
 
-    socket.on('close', () => leaveCurrent());
+    socket.on('close', () => {
+      leaveCurrent();
+      hub.unregisterUser(client);
+    });
   });
 }
